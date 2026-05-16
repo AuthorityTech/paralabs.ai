@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 const HOME_SHARE_IMAGE = {
-  url: `${SITE_URL}/images/paralabs-social-share-light.png`,
+  url: `${SITE_URL}/images/paralabs-social-share-dark.png`,
   width: 1731,
   height: 909,
   alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description:
       "How brands are adapting to AI-first discovery. Case studies, experiments, and tactical intelligence.",
-    images: [HOME_SHARE_IMAGE.url],
+    images: [{ url: HOME_SHARE_IMAGE.url, alt: HOME_SHARE_IMAGE.alt }],
   },
 };
 
