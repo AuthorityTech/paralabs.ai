@@ -4,7 +4,7 @@ date: "2026-05-16"
 slug: "openai-chatgpt-finance-bank-brand-visibility"
 description: "ChatGPT's finance launch shows banks now compete inside AI answer interfaces as much as apps."
 tags: ["ai-visibility", "financial-services", "chatgpt"]
-featured_image: "https://paralabs.ai/images/openai-chatgpt-finance-bank-brand-visibility.png"
+featured_image: "https://paralabs.ai/images/openai-chatgpt-finance-bank-brand-visibility-v2.png"
 featured_image_alt: "OpenAI Just Made Banks Answer-Surface Brands"
 ---
 
