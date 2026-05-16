@@ -11,7 +11,6 @@ export interface PostMeta {
   lastModified?: string;
   description: string;
   tags?: string[];
-  featured_image?: string;
   section?: string; // "essay" | "founderos" (defaults to "founderos")
 }
 
@@ -51,7 +50,6 @@ export function getAllPosts(): PostMeta[] {
       lastModified,
       description: data.description ?? "",
       tags: data.tags ?? [],
-      featured_image: data.featured_image,
       section: data.section ?? "founderos",
     };
   });
@@ -80,7 +78,6 @@ export function getPost(slug: string): Post | null {
     lastModified,
     description: data.description ?? "",
     tags: data.tags ?? [],
-    featured_image: data.featured_image,
     section: data.section ?? "founderos",
     content,
   };

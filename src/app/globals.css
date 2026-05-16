@@ -14,8 +14,8 @@
   --text-primary: #1c1917;
   --text-secondary: #78716c;
   --text-disabled: #a8a29e;
-  --interactive: #c2410c;
-  --accent: #c2410c;
+  --interactive: #E7834D;
+  --accent: #E7834D;
   --dot-grid-mix: 15%;
 }
 
@@ -31,8 +31,8 @@
     --text-secondary: #a8a29e;
     --text-primary: #e7e5e4;
     --text-display: #fafaf9;
-    --interactive: #fb923c;
-    --accent: #fb923c;
+    --interactive: #DF5E18;
+    --accent: #DF5E18;
     --dot-grid-mix: 25%;
   }
 }
@@ -48,8 +48,8 @@ html.dark {
   --text-secondary: #a8a29e;
   --text-primary: #e7e5e4;
   --text-display: #fafaf9;
-  --interactive: #fb923c;
-  --accent: #fb923c;
+  --interactive: #DF5E18;
+  --accent: #DF5E18;
   --dot-grid-mix: 25%;
 }
 

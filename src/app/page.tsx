@@ -1,14 +1,38 @@
 import { getAllPosts } from "@/lib/posts";
+import { formatPostDisplayDate } from "@/lib/postShare";
+import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import Link from "next/link";
 import type { Metadata } from "next";
 
+const HOME_SHARE_IMAGE = {
+  url: `${SITE_URL}/images/paralabs-social-share-light.png`,
+  width: 1731,
+  height: 909,
+  alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+};
+
 export const metadata: Metadata = {
-  alternates: { canonical: "https://paralabs.ai" },
+  alternates: { canonical: SITE_URL },
+  openGraph: {
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description:
+      "How brands are adapting to AI-first discovery. Case studies, experiments, and tactical intelligence on AI brand visibility.",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    type: "website",
+    images: [HOME_SHARE_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description:
+      "How brands are adapting to AI-first discovery. Case studies, experiments, and tactical intelligence.",
+    images: [HOME_SHARE_IMAGE.url],
+  },
 };
 
 function formatDate(d: string) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return formatPostDisplayDate(d);
 }
 
 export default function HomePage() {

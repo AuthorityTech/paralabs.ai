@@ -44,5 +44,5 @@ The underlying shell scripts live in `scripts/`. To set up auth manually in the 
 
 - Pre-existing ESLint warnings (`<img>` vs `<Image />`, `<a>` vs `<Link />`) are downgraded to warnings and do not block the build.
 - Blog content lives in `content/posts/` as markdown files with `YYYY-MM-DD-{slug}.md` naming.
-- OG images are generated at build time via `satori` + `@resvg/resvg-js` + `sharp`.
+- Blog post social images are generated dynamically by `src/app/blog/[slug]/opengraph-image.tsx`; do not add per-post generated PNGs or `featured_image` frontmatter.
 - `gcloud` CLI is installed system-wide (via the VM snapshot, not npm). If missing, install via `apt-get install google-cloud-cli`.

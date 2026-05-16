@@ -1,4 +1,5 @@
 import { getAllPosts } from "@/lib/posts";
+import { formatPostDisplayDate } from "@/lib/postShare";
 import Link from "next/link";
 import type { Metadata } from "next";
 const BASE = "https://paralabs.ai";
@@ -71,8 +72,7 @@ function buildBlogSchema(posts: ReturnType<typeof getAllPosts>) {
 }
 
 function formatDate(d: string) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return formatPostDisplayDate(d);
 }
 
 function PostList({ posts }: { posts: ReturnType<typeof getAllPosts> }) {

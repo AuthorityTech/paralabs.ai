@@ -6,6 +6,13 @@ import remarkGfm from "remark-gfm";
 import remarkHtml from "remark-html";
 import type { Metadata } from "next";
 import Link from "next/link";
+import PostShareCard from "@/components/PostShareCard";
+import {
+  formatPostDisplayDate,
+  getPostShareImageUrl,
+  POST_SHARE_IMAGE_HEIGHT,
+  POST_SHARE_IMAGE_WIDTH,
+} from "@/lib/postShare";
 
 export const dynamicParams = true;
 export const revalidate = 3600;
@@ -24,7 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return {};
-  const image = post.featured_image;
+  const image = getPostShareImageUrl(slug);
+  const imageAlt = `${post.title} — Para Labs research image`;
   return {
     title: post.title,
     description: post.description,
@@ -36,20 +44,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${BASE}/blog/${slug}`,
       publishedTime: post.date,
       modifiedTime: post.lastModified || post.date,
-      images: image ? [{ url: image, width: 1200, height: 630, alt: post.title }] : undefined,
+      images: [{ url: image, width: POST_SHARE_IMAGE_WIDTH, height: POST_SHARE_IMAGE_HEIGHT, alt: imageAlt }],
     },
     twitter: {
       card: "summary_large_image",
       title: post.title + " — Para Labs",
       description: post.description,
-      images: image ? [image] : undefined,
+      images: [{ url: image, alt: imageAlt }],
     },
   };
 }
 
 function formatDate(d: string) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return formatPostDisplayDate(d);
 }
 
 export default async function PostPage({ params }: Props) {
@@ -64,11 +71,24 @@ export default async function PostPage({ params }: Props) {
     .process(normalizedContent);
   const html = normalizeProseHtml(processed.toString());
 
-  const image = post.featured_image;
+  const image = getPostShareImageUrl(slug);
   const pageUrl = `${BASE}/blog/${slug}`;
   const webPageId = pageUrl + "#webpage";
   const articleId = pageUrl + "#article";
+  const imageId = pageUrl + "#primaryimage";
   const breadcrumbId = pageUrl + "#breadcrumb";
+  const imageAlt = `${post.title} — Para Labs research image`;
+  const imageObject = {
+    "@type": "ImageObject",
+    "@id": imageId,
+    url: image,
+    contentUrl: image,
+    width: POST_SHARE_IMAGE_WIDTH,
+    height: POST_SHARE_IMAGE_HEIGHT,
+    caption: imageAlt,
+    description: post.description,
+    representativeOfPage: true,
+  };
 
   const postSchema = {
     "@context": "https://schema.org",
@@ -81,7 +101,9 @@ export default async function PostPage({ params }: Props) {
         isPartOf: { "@id": `${BASE}/#website` },
         breadcrumb: { "@id": breadcrumbId },
         mainEntity: { "@id": articleId },
+        primaryImageOfPage: { "@id": imageId },
       },
+      imageObject,
       {
         "@type": "BlogPosting",
         "@id": articleId,
@@ -90,7 +112,8 @@ export default async function PostPage({ params }: Props) {
         datePublished: post.date,
         dateModified: post.lastModified || post.date,
         url: pageUrl,
-        image,
+        image: { "@id": imageId },
+        thumbnailUrl: image,
         author: {
           "@type": "Organization",
           "@id": `${BASE}/#organization`,
@@ -150,18 +173,7 @@ export default async function PostPage({ params }: Props) {
         </div>
       </header>
 
-      {post.featured_image && (
-        <div className="-mx-0 mb-12">
-          <img
-            src={post.featured_image}
-            alt={post.title}
-            width={1200}
-            height={630}
-            className="w-full rounded-[4px] border border-nothing-border"
-            style={{ aspectRatio: "1200/630", objectFit: "cover" }}
-          />
-        </div>
-      )}
+      <PostShareCard date={post.date} tags={post.tags} />
 
       <div
         className="prose prose-nothing max-w-none prose-p:mb-5 prose-p:leading-[1.75] prose-p:text-nothing-primary prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-nothing-display prose-a:text-link prose-a:no-underline prose-strong:text-nothing-primary prose-li:text-nothing-secondary prose-blockquote:border-nothing-border prose-blockquote:text-nothing-secondary prose-code:text-nothing-primary prose-pre:rounded prose-pre:border prose-pre:border-nothing-border prose-pre:bg-nothing-raised prose-hr:border-nothing-border prose-h2:mb-4 prose-h2:mt-10 hover:prose-a:text-nothing-primary"
