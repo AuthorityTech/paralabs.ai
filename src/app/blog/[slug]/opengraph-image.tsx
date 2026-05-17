@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
-import { getPost } from "@/lib/posts";
+import { getAllPosts, getPost } from "@/lib/posts";
 import {
   formatPostShareDate,
   formatPostShareMainTags,
@@ -17,6 +17,10 @@ export const size = {
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export function generateStaticParams() {
+  return getAllPosts().map((post) => ({ slug: post.slug }));
 }
 
 export default async function Image({ params }: Props) {
