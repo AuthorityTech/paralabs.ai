@@ -7,7 +7,7 @@ const AI_AND_SEARCH_BOTS = ["Googlebot","Bingbot","PerplexityBot","GPTBot","Chat
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: "*", allow: "/" },
+      { userAgent: "*", allow: "/", disallow: "/blog-md/" },
       { userAgent: AI_AND_SEARCH_BOTS, allow: "/" },
     ],
     sitemap: [
