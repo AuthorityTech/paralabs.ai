@@ -280,3 +280,131 @@ h4 {
 .prose #content-blocks li {
   margin-bottom: 0.5em;
 }
+
+/* ───────────────────────────────────────────────
+   Machine View — toggle pill + overlay panel
+   ─────────────────────────────────────────────── */
+
+/* Hide human content when machine mode is active */
+.machine-view-active [data-human-content] {
+  display: none !important;
+}
+
+/* Floating toggle pill */
+.pl-view-switch {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border-visible);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.pl-view-switch:hover {
+  border-color: var(--accent);
+}
+
+.pl-view-switch__label {
+  font-family: var(--font-ibm-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 12px;
+  color: var(--text-disabled);
+  transition: color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  line-height: 1;
+}
+
+.pl-view-switch__label--active {
+  color: var(--accent);
+}
+
+.pl-view-switch__divider {
+  width: 1px;
+  height: 14px;
+  background: var(--border-visible);
+  flex-shrink: 0;
+}
+
+/* Machine panel overlay */
+.pl-machine-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  background: var(--page-bg);
+  overflow: hidden;
+}
+
+.pl-machine-panel__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.pl-machine-panel__bar-label {
+  font-family: var(--font-ibm-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.pl-machine-panel__bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pl-machine-panel__btn {
+  font-family: var(--font-ibm-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  border: 1px solid var(--border-visible);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition:
+    border-color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+    color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.pl-machine-panel__btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.pl-machine-panel__content {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  margin: 0;
+  font-family: var(--font-ibm-mono), ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: transparent;
+}

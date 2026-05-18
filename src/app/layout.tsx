@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import MachineViewToggle from "@/components/MachineViewToggle";
 import { SITE_URL, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 
 const inter = Inter({
@@ -129,8 +130,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-transparent font-sans text-nothing-primary antialiased">
         <Nav />
-        <main>{children}</main>
+        <main data-human-content>{children}</main>
         <Footer />
+        <MachineViewToggle />
       </body>
     </html>
   );
