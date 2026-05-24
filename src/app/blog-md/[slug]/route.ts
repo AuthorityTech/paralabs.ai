@@ -1,21 +1,9 @@
-export const dynamic = "force-static";
-export const revalidate = 3600;
-
-import { markdownResponse, blogPostMarkdown } from "@/lib/machine-content";
+import { blogPostMarkdown } from "@/lib/machine-content";
+import { createSlugMarkdownRouteHandlers } from "@/lib/markdown-route";
 import { getAllPosts } from "@/lib/posts";
 
-export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }));
-}
-
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  const { slug } = await params;
-  const md = blogPostMarkdown(slug);
-  if (!md) {
-    return new Response("Not found", { status: 404 });
-  }
-  return markdownResponse(md);
-}
+export const { dynamic, revalidate, generateStaticParams, GET } =
+  createSlugMarkdownRouteHandlers({
+    getSlugs: () => getAllPosts().map((post) => post.slug),
+    getMarkdown: blogPostMarkdown,
+  });

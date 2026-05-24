@@ -1,8 +1,11 @@
-import { getAllPosts, getPost } from "@/lib/posts";
+import { getPost } from "@/lib/posts";
+import {
+  buildBlogIndexMarkdown,
+  buildHomePageMarkdown,
+} from "@/lib/site-manifest";
 
 const BASE = "https://paralabs.ai";
 
-/** Wrap any markdown body in a standard .md response */
 export function markdownResponse(body: string): Response {
   return new Response(body, {
     headers: {
@@ -13,49 +16,11 @@ export function markdownResponse(body: string): Response {
 }
 
 export function homePageMarkdown(): string {
-  const posts = getAllPosts().slice(0, 10);
-
-  return `# Para Labs
-
-> Independent AI brand visibility research lab. Case studies, experiments, and intelligence on how brands adapt to AI-first discovery.
-
-- URL: ${BASE}
-- Feed: ${BASE}/feed.xml
-- llms.txt: ${BASE}/llms.txt
-
-## Latest Research
-
-${
-  posts.length > 0
-    ? posts
-        .map(
-          (p) =>
-            `- [${p.title}](${BASE}/blog/${p.slug}) — ${p.description?.slice(0, 140) || ""}`
-        )
-        .join("\n")
-    : "- Research publishing soon."
-}
-`;
+  return buildHomePageMarkdown();
 }
 
 export function blogIndexMarkdown(): string {
-  const posts = getAllPosts();
-
-  return `# Para Labs — Research Index
-
-> AI brand visibility research — case studies, experiments, and tactical intelligence on how brands win AI-first discovery.
-
-${
-  posts.length > 0
-    ? posts
-        .map(
-          (p) =>
-            `- [${p.title}](${BASE}/blog/${p.slug}): ${p.description?.slice(0, 140) || ""} (${p.date})`
-        )
-        .join("\n")
-    : "- Research publishing soon."
-}
-`;
+  return buildBlogIndexMarkdown();
 }
 
 export function blogPostMarkdown(slug: string): string | null {

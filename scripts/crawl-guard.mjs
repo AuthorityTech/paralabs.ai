@@ -65,6 +65,14 @@ check(
   "src/lib/machine-content.ts exists",
   fs.existsSync(path.join(ROOT, "src/lib/machine-content.ts"))
 );
+check(
+  "src/lib/site-manifest.ts exists",
+  fs.existsSync(path.join(ROOT, "src/lib/site-manifest.ts"))
+);
+check(
+  "src/lib/markdown-route.ts exists",
+  fs.existsSync(path.join(ROOT, "src/lib/markdown-route.ts"))
+);
 
 // Check route handler files exist
 check(
@@ -121,6 +129,10 @@ check(
 check(
   "globals.css has .pl-machine-panel__bar",
   css.includes(".pl-machine-panel__bar")
+);
+check(
+  "globals.css has .pl-machine-panel__frame",
+  css.includes(".pl-machine-panel__frame")
 );
 
 console.log("");
