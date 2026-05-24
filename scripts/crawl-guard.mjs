@@ -131,8 +131,8 @@ check(
   css.includes(".pl-machine-panel__bar")
 );
 check(
-  "globals.css has .pl-machine-panel__frame",
-  css.includes(".pl-machine-panel__frame")
+  "globals.css has .pl-machine-panel__content",
+  css.includes(".pl-machine-panel__content")
 );
 
 console.log("");

@@ -1,18 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 type Mode = "human" | "machine";
 
-const STORAGE_KEY = "pl-view-mode";
+type FetchState =
+  | { status: "idle" }
+  | { status: "loading"; path: string }
+  | { status: "ready"; path: string; body: string }
+  | { status: "missing"; path: string }
+  | { status: "error"; path: string };
+
+type FetchAction =
+  | { type: "start"; path: string }
+  | { type: "done"; path: string; body: string }
+  | { type: "missing"; path: string }
+  | { type: "error"; path: string }
+  | { type: "reset" };
+
+function fetchReducer(_state: FetchState, action: FetchAction): FetchState {
+  switch (action.type) {
+    case "start":
+      return { status: "loading", path: action.path };
+    case "done":
+      return { status: "ready", path: action.path, body: action.body };
+    case "missing":
+      return { status: "missing", path: action.path };
+    case "error":
+      return { status: "error", path: action.path };
+    case "reset":
+      return { status: "idle" };
+  }
+}
 
 function readStoredMode(): Mode {
   if (typeof window === "undefined") return "human";
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === "machine"
-      ? "machine"
-      : "human";
+    return window.localStorage.getItem("pl-view-mode") === "machine" ? "machine" : "human";
   } catch {
     return "human";
   }
@@ -28,16 +53,15 @@ function markdownPath(pathname: string): string {
 export default function MachineViewToggle() {
   const pathname = usePathname();
   const [mode, setModeState] = useState<Mode>(readStoredMode);
+  const [fetchState, dispatch] = useReducer(fetchReducer, { status: "idle" });
   const [copied, setCopied] = useState(false);
-  const [mdMissing, setMdMissing] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
 
   const mdPath = useMemo(() => markdownPath(pathname), [pathname]);
 
   const setMode = useCallback((nextMode: Mode) => {
     setModeState(nextMode);
-    if (nextMode === "human") setMdMissing(false);
-    window.localStorage.setItem(STORAGE_KEY, nextMode);
+    window.localStorage.setItem("pl-view-mode", nextMode);
   }, []);
 
   useEffect(() => {
@@ -64,15 +88,31 @@ export default function MachineViewToggle() {
   }, [mode, setMode]);
 
   useEffect(() => {
-    if (mode !== "machine") return;
+    if (mode !== "machine") {
+      dispatch({ type: "reset" });
+      return;
+    }
 
     let cancelled = false;
-    fetch(mdPath, { method: "HEAD" })
-      .then((res) => {
-        if (!cancelled) setMdMissing(!res.ok);
+    dispatch({ type: "start", path: mdPath });
+
+    fetch(mdPath, {
+      headers: { Accept: "text/markdown,text/plain;q=0.9,*/*;q=0.1" },
+    })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 404) {
+          dispatch({ type: "missing", path: mdPath });
+          return;
+        }
+        if (!res.ok) {
+          dispatch({ type: "error", path: mdPath });
+          return;
+        }
+        dispatch({ type: "done", path: mdPath, body: await res.text() });
       })
       .catch(() => {
-        if (!cancelled) setMdMissing(true);
+        if (!cancelled) dispatch({ type: "error", path: mdPath });
       });
 
     return () => {
@@ -81,31 +121,20 @@ export default function MachineViewToggle() {
   }, [mdPath, mode]);
 
   const copyMarkdown = useCallback(async () => {
-    try {
-      const res = await fetch(mdPath, {
-        headers: { Accept: "text/markdown,text/plain;q=0.9,*/*;q=0.1" },
-      });
-      if (!res.ok) return;
-      await navigator.clipboard.writeText(await res.text());
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      /* clipboard or network unavailable */
-    }
-  }, [mdPath]);
+    if (fetchState.status !== "ready") return;
+    await navigator.clipboard.writeText(fetchState.body);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }, [fetchState]);
 
   return (
     <>
+      {/* Floating toggle pill */}
       <button
-        type="button"
         onClick={() => setMode(mode === "human" ? "machine" : "human")}
         className="pl-view-switch"
         aria-label={`Switch to ${mode === "human" ? "machine" : "human"} view`}
-        title={
-          mode === "human"
-            ? "View machine-readable version"
-            : "Return to human view"
-        }
+        title={mode === "human" ? "View machine-readable version" : "Return to human view"}
       >
         <span
           className={`pl-view-switch__label ${mode === "human" ? "pl-view-switch__label--active" : ""}`}
@@ -120,6 +149,7 @@ export default function MachineViewToggle() {
         </span>
       </button>
 
+      {/* Machine panel overlay */}
       {mode === "machine" && (
         <section
           ref={panelRef}
@@ -131,10 +161,9 @@ export default function MachineViewToggle() {
             <span className="pl-machine-panel__bar-label">Machine View</span>
             <div className="pl-machine-panel__bar-actions">
               <button
-                type="button"
                 onClick={copyMarkdown}
                 className="pl-machine-panel__btn"
-                disabled={mdMissing}
+                disabled={fetchState.status !== "ready"}
               >
                 {copied ? "Copied" : "Copy"}
               </button>
@@ -146,26 +175,15 @@ export default function MachineViewToggle() {
               >
                 Raw .md
               </a>
-              <button
-                type="button"
-                onClick={() => setMode("human")}
-                className="pl-machine-panel__btn"
-              >
+              <button onClick={() => setMode("human")} className="pl-machine-panel__btn">
                 Esc
               </button>
             </div>
           </div>
-          {mdMissing ? (
-            <p className="pl-machine-panel__message">
-              No machine view exists for {pathname}
-            </p>
-          ) : (
-            <iframe
-              className="pl-machine-panel__frame"
-              src={mdPath}
-              title={`Machine-readable markdown for ${pathname}`}
-            />
-          )}
+          {fetchState.status === "ready" && <pre className="pl-machine-panel__content">{fetchState.body}</pre>}
+          {fetchState.status === "loading" && <pre className="pl-machine-panel__content">Loading {mdPath}</pre>}
+          {fetchState.status === "missing" && <pre className="pl-machine-panel__content">No machine view exists for {pathname}</pre>}
+          {fetchState.status === "error" && <pre className="pl-machine-panel__content">Machine view failed to load.</pre>}
         </section>
       )}
     </>
