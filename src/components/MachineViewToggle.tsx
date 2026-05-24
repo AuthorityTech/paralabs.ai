@@ -97,6 +97,7 @@ export default function MachineViewToggle() {
     dispatch({ type: "start", path: mdPath });
 
     fetch(mdPath, {
+      cache: "no-store",
       headers: { Accept: "text/markdown,text/plain;q=0.9,*/*;q=0.1" },
     })
       .then(async (res) => {
