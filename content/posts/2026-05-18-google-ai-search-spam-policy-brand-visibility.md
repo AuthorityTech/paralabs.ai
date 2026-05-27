@@ -4,6 +4,8 @@ date: "2026-05-18"
 slug: "google-ai-search-spam-policy-brand-visibility"
 description: "Google's AI Search policy update turns AI visibility from a ranking play into a source-trust problem."
 tags: ["ai-visibility", "google", "recommendation-poisoning"]
+primaryQuery: "google's ai search spam policy makes brand visibility a trust problem"
+lastModified: "2026-05-27"
 ---
 
 Google's May 2026 AI Search documentation update changes the practical question for brand teams. The issue is whether a brand's evidence system is trustworthy enough to survive spam enforcement, source selection, and manipulation risk.

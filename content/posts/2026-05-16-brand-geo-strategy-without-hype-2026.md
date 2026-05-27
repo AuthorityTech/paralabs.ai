@@ -4,6 +4,8 @@ date: "2026-05-16"
 slug: "brand-geo-strategy-without-hype-2026"
 description: "A practical GEO strategy starts with source architecture, earned proof, and measurable AI citation behavior."
 tags: ["ai-visibility", "geo", "brand-strategy"]
+primaryQuery: "how brands can build a geo strategy without buying the hype"
+lastModified: "2026-05-27"
 ---
 
 Generative engine optimization is becoming a real brand visibility discipline, but the useful version is narrower than the hype. Brands do not need more AI search slogans. They need source architecture: credible third-party proof, machine-readable pages, dated evidence, and measurement that separates citation presence from ordinary search traffic.

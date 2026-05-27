@@ -4,6 +4,8 @@ date: "2026-05-17"
 slug: "meta-ai-connectors-brand-visibility-workflow-infrastructure"
 description: "Meta's AI connectors show brands now compete through AI-readable workflows, not just campaign copy."
 tags: ["ai-visibility", "meta", "workflow-infrastructure"]
+primaryQuery: "meta's ai connectors show brand visibility is becoming workflow infrastructure"
+lastModified: "2026-05-27"
 ---
 
 Meta's AI connector rollout shows where brand visibility is moving: away from static campaign assets and into AI-readable workflows that decide which messages, audiences, products, and proof points get activated. The visibility problem is whether the systems around the brand can understand, route, and reuse its evidence.

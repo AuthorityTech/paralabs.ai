@@ -4,6 +4,8 @@ date: "2026-05-19"
 slug: "rare-beauty-ai-search-gen-z-discovery-case-study"
 description: "Rare Beauty's AI-powered Search case study shows brand visibility now starts in intent signals, not final clicks."
 tags: ["ai-visibility", "google", "beauty"]
+primaryQuery: "rare beauty shows why ai search visibility starts before the query"
+lastModified: "2026-05-27"
 ---
 
 Rare Beauty's AI-powered Search case study shows discovery moving upstream. The brand did not treat Search as a final-click channel. It treated AI-assisted search, YouTube, reviews, and retail intent as one connected system for being found when Gen Z shoppers ask personal product questions.
