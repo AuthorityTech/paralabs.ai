@@ -1,4 +1,5 @@
-import { getAllPosts, getPost } from "@/lib/posts";
+import { getPost } from "@/lib/posts";
+import { extractFaqFromHtml } from "@/lib/geo-schema";
 import { normalizeMarkdown, normalizeProseHtml } from "@/lib/normalizeMarkdown";
 import { notFound } from "next/navigation";
 import { remark } from "remark";
@@ -90,52 +91,69 @@ export default async function PostPage({ params }: Props) {
     representativeOfPage: true,
   };
 
-  const postSchema = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebPage",
-        "@id": webPageId,
-        url: pageUrl,
-        name: post.title,
-        isPartOf: { "@id": `${BASE}/#website` },
-        breadcrumb: { "@id": breadcrumbId },
-        mainEntity: { "@id": articleId },
-        primaryImageOfPage: { "@id": imageId },
+  const faqItems = extractFaqFromHtml(html);
+
+  const graph: Record<string, unknown>[] = [
+    {
+      "@type": "WebPage",
+      "@id": webPageId,
+      url: pageUrl,
+      name: post.title,
+      isPartOf: { "@id": `${BASE}/#website` },
+      breadcrumb: { "@id": breadcrumbId },
+      mainEntity: { "@id": articleId },
+      primaryImageOfPage: { "@id": imageId },
+    },
+    imageObject,
+    {
+      "@type": "BlogPosting",
+      "@id": articleId,
+      headline: post.title,
+      description: post.description,
+      datePublished: post.date,
+      dateModified: post.lastModified || post.date,
+      url: pageUrl,
+      image: { "@id": imageId },
+      thumbnailUrl: image,
+      author: {
+        "@type": "Organization",
+        "@id": `${BASE}/#organization`,
+        name: "Para Labs",
+        url: BASE,
       },
-      imageObject,
-      {
-        "@type": "BlogPosting",
-        "@id": articleId,
-        headline: post.title,
-        description: post.description,
-        datePublished: post.date,
-        dateModified: post.lastModified || post.date,
-        url: pageUrl,
-        image: { "@id": imageId },
-        thumbnailUrl: image,
-        author: {
-          "@type": "Organization",
-          "@id": `${BASE}/#organization`,
-          name: "Para Labs",
-          url: BASE,
-        },
-        publisher: { "@type": "Organization", "@id": `${BASE}/#organization` },
-        mainEntityOfPage: { "@id": webPageId },
-        keywords: post.tags?.join(", ") ?? "",
-        isPartOf: { "@type": "Blog", "@id": `${BASE}/blog#blog` },
+      publisher: { "@type": "Organization", "@id": `${BASE}/#organization` },
+      mainEntityOfPage: { "@id": webPageId },
+      keywords: post.tags?.join(", ") ?? "",
+      isPartOf: { "@type": "Blog", "@id": `${BASE}/blog#blog` },
+      speakable: {
+        "@type": "SpeakableSpecification",
+        cssSelector: ["[data-speakable='headline']", "[data-speakable='summary']"],
       },
-      {
-        "@type": "BreadcrumbList",
-        "@id": breadcrumbId,
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: { "@type": "WebPage", "@id": BASE, name: "Home" } },
-          { "@type": "ListItem", position: 2, name: "Research", item: { "@type": "WebPage", "@id": `${BASE}/blog`, name: "Research" } },
-          { "@type": "ListItem", position: 3, name: post.title, item: { "@type": "WebPage", "@id": pageUrl, name: post.title } },
-        ],
-      },
-    ],
-  };
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": breadcrumbId,
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: { "@type": "WebPage", "@id": BASE, name: "Home" } },
+        { "@type": "ListItem", position: 2, name: "Research", item: { "@type": "WebPage", "@id": `${BASE}/blog`, name: "Research" } },
+        { "@type": "ListItem", position: 3, name: post.title, item: { "@type": "WebPage", "@id": pageUrl, name: post.title } },
+      ],
+    },
+  ];
+
+  if (faqItems.length > 0) {
+    graph.push({
+      "@type": "FAQPage",
+      "@id": `${pageUrl}#faq`,
+      mainEntity: faqItems.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
+    });
+  }
+
+  const postSchema = { "@context": "https://schema.org", "@graph": graph };
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16 md:py-20">
@@ -151,9 +169,14 @@ export default async function PostPage({ params }: Props) {
       </nav>
 
       <header className="mb-10">
-        <h1 className="mb-5 font-display text-[1.65rem] font-medium leading-tight tracking-[-0.02em] text-nothing-display md:text-[2rem]">
+        <h1 data-speakable="headline" className="mb-5 font-display text-[1.65rem] font-medium leading-tight tracking-[-0.02em] text-nothing-display md:text-[2rem]">
           {post.title}
         </h1>
+        {post.description && (
+          <p data-speakable="summary" className="mb-6 text-[0.95rem] leading-relaxed text-nothing-secondary">
+            {post.description}
+          </p>
+        )}
         <div className="flex items-center gap-3">
           <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-nothing-secondary">Para Labs Research</span>
           <span className="text-nothing-border">&middot;</span>
