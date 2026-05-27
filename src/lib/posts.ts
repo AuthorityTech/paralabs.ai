@@ -37,12 +37,11 @@ export function getAllPosts(): PostMeta[] {
     const slug = filename.replace(/^\d{4}-\d{2}-\d{2}-/, "").replace(/\.md$/, "");
     const raw = fs.readFileSync(filepath, "utf8");
     const { data } = matter(raw);
-    const stat = fs.statSync(filepath);
     const lastModified =
       toIsoDate(data.lastModified) ??
       toIsoDate(data.lastmod) ??
       toIsoDate(data.updated) ??
-      stat.mtime.toISOString();
+      undefined;
     return {
       slug,
       title: data.title ?? slug,
@@ -65,12 +64,11 @@ export function getPost(slug: string): Post | null {
   const filepath = path.join(POSTS_DIR, filename);
   const raw = fs.readFileSync(filepath, "utf8");
   const { data, content } = matter(raw);
-  const stat = fs.statSync(filepath);
   const lastModified =
     toIsoDate(data.lastModified) ??
     toIsoDate(data.lastmod) ??
     toIsoDate(data.updated) ??
-    stat.mtime.toISOString();
+    undefined;
   return {
     slug,
     title: data.title ?? slug,
