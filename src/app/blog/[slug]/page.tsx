@@ -1,5 +1,4 @@
 import { getPost } from "@/lib/posts";
-import { extractFaqFromHtml } from "@/lib/geo-schema";
 import { normalizeMarkdown, normalizeProseHtml } from "@/lib/normalizeMarkdown";
 import { notFound } from "next/navigation";
 import { remark } from "remark";
@@ -14,6 +13,7 @@ import {
   POST_SHARE_IMAGE_HEIGHT,
   POST_SHARE_IMAGE_WIDTH,
 } from "@/lib/postShare";
+import { generateBlogJsonLd, PL_BLOG_CONFIG } from "@editorialkit/schema";
 
 export const dynamicParams = true;
 export const revalidate = 3600;
@@ -73,91 +73,23 @@ export default async function PostPage({ params }: Props) {
   const html = normalizeProseHtml(processed.toString());
 
   const image = getPostShareImageUrl(slug);
-  const pageUrl = `${BASE}/blog/${slug}`;
-  const webPageId = pageUrl + "#webpage";
-  const articleId = pageUrl + "#article";
-  const imageId = pageUrl + "#primaryimage";
-  const breadcrumbId = pageUrl + "#breadcrumb";
-  const imageAlt = `${post.title} — Para Labs research image`;
-  const imageObject = {
-    "@type": "ImageObject",
-    "@id": imageId,
-    url: image,
-    contentUrl: image,
-    width: POST_SHARE_IMAGE_WIDTH,
-    height: POST_SHARE_IMAGE_HEIGHT,
-    caption: imageAlt,
-    description: post.description,
-    representativeOfPage: true,
-  };
 
-  const faqItems = extractFaqFromHtml(html);
-
-  const graph: Record<string, unknown>[] = [
+  const blogLd = generateBlogJsonLd(
     {
-      "@type": "WebPage",
-      "@id": webPageId,
-      url: pageUrl,
-      name: post.title,
-      isPartOf: { "@id": `${BASE}/#website` },
-      breadcrumb: { "@id": breadcrumbId },
-      mainEntity: { "@id": articleId },
-      primaryImageOfPage: { "@id": imageId },
-    },
-    imageObject,
-    {
-      "@type": "BlogPosting",
-      "@id": articleId,
-      headline: post.title,
+      slug,
+      title: post.title,
       description: post.description,
-      datePublished: post.date,
-      dateModified: post.lastModified || post.date,
-      url: pageUrl,
-      image: { "@id": imageId },
-      thumbnailUrl: image,
-      author: {
-        "@type": "Organization",
-        "@id": `${BASE}/#organization`,
-        name: "Para Labs",
-        url: BASE,
-      },
-      publisher: { "@type": "Organization", "@id": `${BASE}/#organization` },
-      mainEntityOfPage: { "@id": webPageId },
-      keywords: post.tags?.join(", ") ?? "",
-      isPartOf: { "@type": "Blog", "@id": `${BASE}/blog#blog` },
-      speakable: {
-        "@type": "SpeakableSpecification",
-        cssSelector: ["[data-speakable='headline']", "[data-speakable='summary']"],
-      },
+      publishDate: post.date,
+      lastModified: post.lastModified,
+      body: html,
+      featuredImage: image,
     },
-    {
-      "@type": "BreadcrumbList",
-      "@id": breadcrumbId,
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: { "@type": "WebPage", "@id": BASE, name: "Home" } },
-        { "@type": "ListItem", position: 2, name: "Research", item: { "@type": "WebPage", "@id": `${BASE}/blog`, name: "Research" } },
-        { "@type": "ListItem", position: 3, name: post.title, item: { "@type": "WebPage", "@id": pageUrl, name: post.title } },
-      ],
-    },
-  ];
-
-  if (faqItems.length > 0) {
-    graph.push({
-      "@type": "FAQPage",
-      "@id": `${pageUrl}#faq`,
-      mainEntity: faqItems.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: { "@type": "Answer", text: item.answer },
-      })),
-    });
-  }
-
-  const postSchema = { "@context": "https://schema.org", "@graph": graph };
+    PL_BLOG_CONFIG,
+  );
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16 md:py-20">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(postSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: blogLd }} />
 
       <nav className="mb-12">
         <Link
