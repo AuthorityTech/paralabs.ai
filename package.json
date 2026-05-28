@@ -14,7 +14,7 @@
     "indexnow:all": "node scripts/ping-indexnow.mjs --all"
   },
   "dependencies": {
-    "@editorialkit/schema": "file:packages/editorialkit-schema-1.1.0.tgz",
+    "@editorialkit/schema": "file:packages/editorialkit-schema-1.1.1.tgz",
     "gray-matter": "^4.0.3",
     "next": "^15.5.18",
     "react": "^19.0.0",
