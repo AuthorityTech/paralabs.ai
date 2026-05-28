@@ -1,0 +1,66 @@
+name: Schema Integrity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/geo-schema.ts'
+      - 'src/app/layout.tsx'
+      - 'src/app/blog/*/page.tsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'packages/**'
+      - '.github/workflows/schema-integrity.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/geo-schema.ts'
+      - 'src/app/layout.tsx'
+      - 'src/app/blog/*/page.tsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'packages/**'
+      - '.github/workflows/schema-integrity.yml'
+
+concurrency:
+  group: schema-integrity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  schema-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Source guard — package dependency
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+            if (!deps['@editorialkit/schema']) {
+              console.error('FAIL: @editorialkit/schema is missing from package.json dependencies');
+              process.exit(1);
+            }
+            console.log('PASS: @editorialkit/schema found in dependencies');
+          "
+
+      - name: Source guard — geo-schema imports @editorialkit/schema
+        run: |
+          if ! grep -q '@editorialkit/schema' src/lib/geo-schema.ts; then
+            echo "FAIL: src/lib/geo-schema.ts does not import from @editorialkit/schema"
+            exit 1
+          fi
+          echo "PASS: src/lib/geo-schema.ts imports from @editorialkit/schema"
+
+      - name: Full build
+        run: npm run build
