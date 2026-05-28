@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
+    "ontology:graph": "node scripts/validate-ontology-graph.mjs",
+    "prebuild": "npm run ontology:graph",
     "build": "next build && node scripts/crawl-guard.mjs",
     "start": "next start",
     "lint": "next lint",
