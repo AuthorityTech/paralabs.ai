@@ -1,17 +1,17 @@
 import { getAllPosts } from "@/lib/posts";
+import { BLOG_COPY } from "@/lib/page-copy";
 import { formatPostDisplayDate } from "@/lib/postShare";
 import Link from "next/link";
 import type { Metadata } from "next";
 const BASE = "https://paralabs.ai";
 
 export const metadata: Metadata = {
-  title: "Research",
-  description:
-    "AI brand visibility research — case studies, experiments, and tactical intelligence on how brands win AI-first discovery.",
+  title: BLOG_COPY.title,
+  description: BLOG_COPY.metadataDescription,
   alternates: { canonical: `${BASE}/blog` },
   openGraph: {
-    title: "Research — Para Labs",
-    description: "AI brand visibility research — case studies and experiments on how brands win AI-first discovery.",
+    title: `${BLOG_COPY.title} — Para Labs`,
+    description: BLOG_COPY.metadataDescription,
     url: `${BASE}/blog`,
   },
 };
@@ -37,8 +37,8 @@ function buildBlogSchema(posts: ReturnType<typeof getAllPosts>) {
       {
         "@type": "Blog",
         "@id": `${BASE}/blog#blog`,
-        name: "Para Labs — AI Brand Visibility Lab",
-        description: "Case studies, experiments, and tactical intelligence on AI brand visibility.",
+        name: BLOG_COPY.schemaName,
+        description: BLOG_COPY.schemaDescription,
         url: `${BASE}/blog`,
         publisher: { "@type": "Organization", "@id": `${BASE}/#organization` },
       },
@@ -46,7 +46,7 @@ function buildBlogSchema(posts: ReturnType<typeof getAllPosts>) {
         "@type": "CollectionPage",
         "@id": `${BASE}/blog#collection`,
         url: `${BASE}/blog`,
-        name: "Research — Para Labs",
+        name: BLOG_COPY.collectionName,
         isPartOf: { "@id": `${BASE}/#website` },
         mainEntity: { "@id": `${BASE}/blog#item-list` },
         breadcrumb: { "@id": `${BASE}/blog#breadcrumb` },
@@ -54,7 +54,7 @@ function buildBlogSchema(posts: ReturnType<typeof getAllPosts>) {
       {
         "@type": "ItemList",
         "@id": `${BASE}/blog#item-list`,
-        name: "Para Labs Research",
+        name: BLOG_COPY.itemListName,
         numberOfItems: itemList.length,
         itemListOrder: "https://schema.org/ItemListOrderDescending",
         itemListElement: itemList,
@@ -64,7 +64,7 @@ function buildBlogSchema(posts: ReturnType<typeof getAllPosts>) {
         "@id": `${BASE}/blog#breadcrumb`,
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: { "@type": "WebPage", "@id": BASE, name: "Home" } },
-          { "@type": "ListItem", position: 2, name: "Research", item: { "@type": "WebPage", "@id": `${BASE}/blog`, name: "Research" } },
+          { "@type": "ListItem", position: 2, name: BLOG_COPY.heading, item: { "@type": "WebPage", "@id": `${BASE}/blog`, name: BLOG_COPY.heading } },
         ],
       },
     ],
@@ -117,9 +117,11 @@ export default function BlogPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }} />
 
       <header className="mb-16">
-        <h1 className="font-display mb-3 text-[2rem] font-medium leading-tight tracking-[-0.02em] text-nothing-display">Research</h1>
+        <h1 className="font-display mb-3 text-[2rem] font-medium leading-tight tracking-[-0.02em] text-nothing-display">
+          {BLOG_COPY.heading}
+        </h1>
         <p className="max-w-xl text-[14px] font-light leading-relaxed text-nothing-secondary">
-          AI brand visibility research — how brands are winning (and losing) in AI-first discovery. Case studies, data, and what the evidence shows.
+          {BLOG_COPY.visibleDescription}
         </p>
       </header>
 
@@ -128,7 +130,7 @@ export default function BlogPage() {
           <PostList posts={all} />
         </section>
       ) : (
-        <p className="text-[14px] text-nothing-secondary">First studies publishing soon.</p>
+        <p className="text-[14px] text-nothing-secondary">{BLOG_COPY.emptyWriting}</p>
       )}
     </div>
   );

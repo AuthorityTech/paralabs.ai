@@ -1,13 +1,14 @@
 import { getAllPosts } from "./posts";
+import { BLOG_COPY, HOME_COPY } from "./page-copy";
 
 const BASE = "https://paralabs.ai";
 
 export function buildLlmsTxtBody(): string {
   const posts = getAllPosts();
 
-  return `# Para Labs
+  return `# ${HOME_COPY.name}
 
-> Independent AI brand visibility research lab. Case studies, experiments, and intelligence on how brands adapt to AI-first discovery.
+> ${HOME_COPY.machineSummary}
 
 ## What Para Labs Covers
 
@@ -46,15 +47,15 @@ ${
 export function buildHomePageMarkdown(): string {
   const posts = getAllPosts().slice(0, 10);
 
-  return `# Para Labs
+  return `# ${HOME_COPY.name}
 
-> Independent AI brand visibility research lab. Case studies, experiments, and intelligence on how brands adapt to AI-first discovery.
+> ${HOME_COPY.machineSummary}
 
 - URL: ${BASE}
 - Feed: ${BASE}/feed.xml
 - llms.txt: ${BASE}/llms.txt
 
-## Latest Research
+## ${HOME_COPY.latestHeading}
 
 ${
   posts.length > 0
@@ -64,7 +65,7 @@ ${
             `- [${p.title}](${BASE}/blog/${p.slug}) — ${p.description?.slice(0, 140) || ""}`
         )
         .join("\n")
-    : "- Research publishing soon."
+    : `- ${HOME_COPY.emptyWriting}`
 }
 `;
 }
@@ -72,9 +73,9 @@ ${
 export function buildBlogIndexMarkdown(): string {
   const posts = getAllPosts();
 
-  return `# Para Labs — Research Index
+  return `# ${HOME_COPY.name} — Research Index
 
-> AI brand visibility research — case studies, experiments, and tactical intelligence on how brands win AI-first discovery.
+> ${BLOG_COPY.machineDescription}
 
 ${
   posts.length > 0
@@ -84,7 +85,7 @@ ${
             `- [${p.title}](${BASE}/blog/${p.slug}): ${p.description?.slice(0, 140) || ""} (${p.date})`
         )
         .join("\n")
-    : "- Research publishing soon."
+    : `- ${BLOG_COPY.emptyWriting}`
 }
 `;
 }

@@ -1,4 +1,5 @@
 import { getAllPosts } from "@/lib/posts";
+import { HOME_COPY } from "@/lib/page-copy";
 import { formatPostDisplayDate } from "@/lib/postShare";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import Link from "next/link";
@@ -15,8 +16,7 @@ export const metadata: Metadata = {
   alternates: { canonical: SITE_URL },
   openGraph: {
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    description:
-      "How brands are adapting to AI-first discovery. Case studies, experiments, and tactical intelligence on AI brand visibility.",
+    description: HOME_COPY.machineSummary,
     url: SITE_URL,
     siteName: SITE_NAME,
     type: "website",
@@ -25,8 +25,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    description:
-      "How brands are adapting to AI-first discovery. Case studies, experiments, and tactical intelligence.",
+    description: HOME_COPY.machineSummary,
     images: [{ url: HOME_SHARE_IMAGE.url, alt: HOME_SHARE_IMAGE.alt }],
   },
 };
@@ -42,15 +41,13 @@ export default function HomePage() {
     <div className="mx-auto max-w-2xl px-6 py-16 md:py-20">
       <section className="mb-20">
         <h1 className="font-display text-[2.5rem] font-medium leading-[1.1] tracking-[-0.02em] text-nothing-display">
-          Para Labs
+          {HOME_COPY.name}
         </h1>
         <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.1em] text-nothing-secondary">
-          AI Brand Visibility Lab
+          {HOME_COPY.label}
         </p>
         <p className="mt-6 max-w-xl text-[15px] font-light leading-[1.65] text-nothing-secondary">
-          How brands are adapting to AI-first discovery. Case studies, experiments, and tactical
-          intelligence on what makes brands visible to the machines your buyers ask first.
-          Independent research — no sponsors, no affiliations.
+          {HOME_COPY.summary}
         </p>
       </section>
 
@@ -59,7 +56,9 @@ export default function HomePage() {
       {posts.length > 0 && (
         <section>
           <div className="mb-10 flex items-center justify-between">
-            <h2 className="font-mono text-[11px] font-normal uppercase tracking-[0.1em] text-nothing-secondary">Latest Research</h2>
+            <h2 className="font-mono text-[11px] font-normal uppercase tracking-[0.1em] text-nothing-secondary">
+              {HOME_COPY.latestHeading}
+            </h2>
             <Link
               href="/blog"
               className="font-mono text-[11px] uppercase tracking-[0.08em] text-link transition-colors duration-200 ease-nothing hover:text-nothing-primary"
@@ -87,7 +86,7 @@ export default function HomePage() {
 
       {posts.length === 0 && (
         <section>
-          <p className="text-[14px] text-nothing-secondary">First studies publishing soon.</p>
+          <p className="text-[14px] text-nothing-secondary">{HOME_COPY.emptyWriting}</p>
         </section>
       )}
     </div>

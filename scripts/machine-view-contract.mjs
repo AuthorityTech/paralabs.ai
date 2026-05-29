@@ -1,0 +1,56 @@
+export const machineViewContract = {
+  siteName: "Para Labs",
+  baseUrl: "https://paralabs.ai",
+  sourceFiles: [
+    "src/app/page.tsx",
+    "src/app/blog/page.tsx",
+    "src/app/index.md/route.ts",
+    "src/app/blog.md/route.ts",
+    "src/app/blog-md/[slug]/route.ts",
+    "src/app/llms.txt/route.ts",
+    "src/lib/machine-content.ts",
+    "src/lib/markdown-route.ts",
+    "src/lib/page-copy.ts",
+    "src/lib/site-manifest.ts",
+  ],
+  requiredSourceText: [
+    { file: "src/lib/page-copy.ts", text: "export const HOME_COPY" },
+    { file: "src/lib/page-copy.ts", text: "export const BLOG_COPY" },
+    { file: "src/lib/page-copy.ts", text: "Independent AI brand visibility research lab" },
+    { file: "src/lib/site-manifest.ts", text: 'import { BLOG_COPY, HOME_COPY } from "./page-copy"' },
+    { file: "src/lib/site-manifest.ts", text: "Machine-Readable Endpoints" },
+    { file: "src/lib/site-manifest.ts", text: "/index.md" },
+    { file: "src/lib/site-manifest.ts", text: "/blog.md" },
+    { file: "src/lib/site-manifest.ts", text: ".md" },
+    { file: "src/app/page.tsx", text: 'import { HOME_COPY } from "@/lib/page-copy"' },
+    { file: "src/app/page.tsx", text: "HOME_COPY.summary" },
+    { file: "src/app/blog/page.tsx", text: 'import { BLOG_COPY } from "@/lib/page-copy"' },
+    { file: "src/app/blog/page.tsx", text: "BLOG_COPY.visibleDescription" },
+    { file: "src/lib/machine-content.ts", text: "buildHomePageMarkdown" },
+    { file: "src/lib/machine-content.ts", text: "buildBlogIndexMarkdown" },
+  ],
+  contentCollections: [
+    {
+      name: "posts",
+      dir: "content/posts",
+      routePrefix: "blog-md",
+      minFiles: 1,
+    },
+  ],
+  staticMarkdown: [
+    {
+      path: "index.md",
+      minBytes: 350,
+      required: ["# Para Labs", "AI brand visibility", "## Latest Research"],
+    },
+    {
+      path: "blog.md",
+      minBytes: 300,
+      required: ["# Para Labs", "Research Index", "AI brand visibility"],
+    },
+  ],
+  llms: {
+    path: "llms.txt",
+    required: ["# Para Labs", "Machine-Readable Endpoints", "/index.md", "/blog.md", ".md"],
+  },
+};
