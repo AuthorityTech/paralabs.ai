@@ -27,7 +27,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install graphifyy
-        run: pip install graphifyy
+        run: pip install 'graphifyy==0.8.24'
 
       - name: Run graphify pipeline
         run: |
