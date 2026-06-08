@@ -156,6 +156,16 @@ function validateXmlSitemap(content, location, required = []) {
   locs.forEach((loc, index) => validateUrl(`${location}.loc[${index}]`, loc));
 }
 
+function validateHumanSitemapIndex(content, location, required = [], forbidden = []) {
+  requireIncludes(content, ['<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'], location);
+  requireIncludes(content, required, location);
+  for (const forbiddenText of forbidden) {
+    if (content.includes(forbiddenText)) {
+      fail(location, `Human sitemap index must not include machine alternate: ${forbiddenText}`);
+    }
+  }
+}
+
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
@@ -213,6 +223,18 @@ if (machineViewContract.machineSitemap) {
   }
 }
 
+if (machineViewContract.humanSitemapIndex) {
+  const humanSitemapIndex = readOutput(machineViewContract.humanSitemapIndex.path);
+  if (humanSitemapIndex) {
+    validateHumanSitemapIndex(
+      humanSitemapIndex,
+      machineViewContract.humanSitemapIndex.path,
+      machineViewContract.humanSitemapIndex.required,
+      machineViewContract.humanSitemapIndex.forbidden,
+    );
+  }
+}
+
 for (const collection of machineViewContract.contentCollections || []) {
   const dir = path.join(ROOT, collection.dir);
   const files = fs.existsSync(dir)
@@ -239,9 +261,12 @@ for (const collection of machineViewContract.contentCollections || []) {
 
 const robots = readOutput("robots.txt", { required: false });
 if (robots) {
-  requireIncludes(robots, ["/blog-md/", "/machine-manifest.json", "/machine-sitemap.xml"], "robots.txt");
-  if (/Disallow:\s*\/blog-md\//i.test(robots) || /Disallow:\s*\/machine-manifest\.json/i.test(robots)) {
-    fail("robots.txt", "Machine-readable routes must not be disallowed.");
+  requireIncludes(robots, ["/sitemap.xml", "/blog/sitemap.xml", "/pages/sitemap.xml"], "robots.txt");
+  if (/Sitemap:\s*https:\/\/paralabs\.ai\/machine-sitemap\.xml/i.test(robots)) {
+    fail("robots.txt", "Machine sitemap must not be advertised as a search-engine Sitemap.");
+  }
+  if (/Disallow:\s*\/blog-md\//i.test(robots) || /Disallow:\s*\/machine-manifest\.json/i.test(robots) || /Disallow:\s*\/machine-sitemap\.xml/i.test(robots)) {
+    fail("robots.txt", "Machine-readable routes should stay fetchable for agents.");
   }
 }
 

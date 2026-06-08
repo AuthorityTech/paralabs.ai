@@ -3,7 +3,6 @@ export const dynamic = "force-static";
 const SITEMAPS = [
   "https://paralabs.ai/pages/sitemap.xml",
   "https://paralabs.ai/blog/sitemap.xml",
-  "https://paralabs.ai/machine-sitemap.xml",
 ];
 
 export function GET() {

@@ -14,6 +14,7 @@
     "gsc:check": "bash scripts/gsc-check.sh",
     "vercel:status": "bash scripts/vercel-status.sh",
     "gsc:submit-sitemaps": "node scripts/submit-gsc-sitemaps.mjs",
+    "gsc:delete-sitemaps": "node scripts/submit-gsc-sitemaps.mjs --delete",
     "indexnow": "node scripts/ping-indexnow.mjs",
     "indexnow:all": "node scripts/ping-indexnow.mjs --all"
   },

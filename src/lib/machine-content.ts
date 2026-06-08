@@ -7,11 +7,15 @@ import {
 
 const BASE = "https://paralabs.ai";
 
-export function markdownResponse(body: string): Response {
+const SEARCH_BOT_NOINDEX = "googlebot: noindex, follow; bingbot: noindex, follow";
+
+export function markdownResponse(body: string, canonicalUrl: string): Response {
   return new Response(body, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
       "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      "Link": `<${canonicalUrl}>; rel="canonical"`,
+      "X-Robots-Tag": SEARCH_BOT_NOINDEX,
     },
   });
 }

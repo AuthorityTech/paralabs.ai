@@ -13,7 +13,25 @@ const SITE_URL =
   process.env.GSC_SITE_URL ||
   process.env.SEARCH_CONSOLE_SITE_URL ||
   "sc-domain:paralabs.ai";
-const SITEMAPS = (process.env.GSC_SITEMAPS || "https://paralabs.ai/sitemap.xml,https://paralabs.ai/pages/sitemap.xml,https://paralabs.ai/blog/sitemap.xml,https://paralabs.ai/machine-sitemap.xml")
+const args = process.argv.slice(2);
+const mode = args.includes("--delete") ? "delete" : "submit";
+
+function readArgValues(name) {
+  const values = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === name) {
+      const next = args[index + 1];
+      if (next && !next.startsWith("--")) values.push(next);
+    } else if (arg.startsWith(`${name}=`)) {
+      values.push(arg.slice(name.length + 1));
+    }
+  }
+  return values.join(",");
+}
+
+const DEFAULT_SITEMAPS = "https://paralabs.ai/sitemap.xml,https://paralabs.ai/pages/sitemap.xml,https://paralabs.ai/blog/sitemap.xml";
+const SITEMAPS = (readArgValues("--sitemaps") || process.env.GSC_SITEMAPS || DEFAULT_SITEMAPS)
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
@@ -76,14 +94,14 @@ async function getAccessToken(serviceAccount) {
 async function submitSitemap(accessToken, sitemapUrl) {
   const endpoint = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(SITE_URL)}/sitemaps/${encodeURIComponent(sitemapUrl)}`;
   const res = await fetch(endpoint, {
-    method: "PUT",
+    method: mode === "delete" ? "DELETE" : "PUT",
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok && res.status !== 204) {
     const text = await res.text().catch(() => "");
-    throw new Error(`GSC sitemap submission failed for ${sitemapUrl} (${res.status}): ${text}`);
+    throw new Error(`GSC sitemap ${mode} failed for ${sitemapUrl} (${res.status}): ${text}`);
   }
-  console.log(`Submitted sitemap to GSC: ${sitemapUrl}`);
+  console.log(`${mode === "delete" ? "Deleted" : "Submitted"} sitemap ${mode === "delete" ? "from" : "to"} GSC: ${sitemapUrl}`);
 }
 
 async function main() {

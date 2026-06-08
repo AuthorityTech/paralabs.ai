@@ -3,6 +3,7 @@ import { markdownResponse } from "./machine-content";
 type SlugRouteConfig = {
   getSlugs: () => string[];
   getMarkdown: (slug: string) => string | null;
+  getCanonicalUrl: (slug: string) => string;
 };
 
 export const MARKDOWN_ROUTE_CONFIG = {
@@ -23,7 +24,7 @@ export function createSlugMarkdownRouteHandlers(config: SlugRouteConfig) {
       const { slug } = await context.params;
       const md = config.getMarkdown(slug);
       if (!md) return new Response("Not found", { status: 404 });
-      return markdownResponse(md);
+      return markdownResponse(md, config.getCanonicalUrl(slug));
     },
   };
 }

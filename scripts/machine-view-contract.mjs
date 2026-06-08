@@ -30,6 +30,9 @@ export const machineViewContract = {
     { file: "src/lib/site-manifest.ts", text: "export function buildMachineManifest" },
     { file: "src/lib/site-manifest.ts", text: "export function buildMachineSitemapXml" },
     { file: "src/lib/site-manifest.ts", text: "export function buildMachineReadableLinks" },
+    { file: "src/lib/machine-content.ts", text: "rel=\"canonical\"" },
+    { file: "src/lib/machine-content.ts", text: "googlebot: noindex, follow" },
+    { file: "src/lib/machine-content.ts", text: "bingbot: noindex, follow" },
     { file: "src/lib/machine-metadata.ts", text: "export function buildBoundedMetaTitle" },
     { file: "src/lib/machine-metadata.ts", text: "export function buildBoundedMetaDescription" },
     { file: "src/app/blog/[slug]/page.tsx", text: 'import { buildBoundedMetaDescription, buildBoundedMetaTitle } from "@/lib/machine-metadata"' },
@@ -71,5 +74,10 @@ export const machineViewContract = {
   machineSitemap: {
     path: "machine-sitemap.xml",
     required: ["/index.md", "/blog.md", "/llms.txt", "/machine-manifest.json", "/blog-md/"],
+  },
+  humanSitemapIndex: {
+    path: "sitemap.xml",
+    required: ["/pages/sitemap.xml", "/blog/sitemap.xml"],
+    forbidden: ["/machine-sitemap.xml", "/index.md", "/blog.md", "/blog-md/", "/machine-manifest.json"],
   },
 };
