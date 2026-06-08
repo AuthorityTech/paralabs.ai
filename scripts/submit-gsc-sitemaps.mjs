@@ -9,7 +9,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 
-const SITE_URL = process.env.GSC_SITE_URL || "sc-domain:paralabs.ai";
+const SITE_URL =
+  process.env.GSC_SITE_URL ||
+  process.env.SEARCH_CONSOLE_SITE_URL ||
+  "sc-domain:paralabs.ai";
 const SITEMAPS = (process.env.GSC_SITEMAPS || "https://paralabs.ai/sitemap.xml,https://paralabs.ai/pages/sitemap.xml,https://paralabs.ai/blog/sitemap.xml")
   .split(",")
   .map((value) => value.trim())
@@ -21,7 +24,9 @@ function readServiceAccount() {
   if (process.env.GSC_SERVICE_ACCOUNT_JSON?.trim()) {
     return JSON.parse(process.env.GSC_SERVICE_ACCOUNT_JSON);
   }
-  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const credentialsPath =
+    process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+    process.env.GOOGLE_SEARCH_CONSOLE_CREDENTIALS;
   if (credentialsPath && fs.existsSync(credentialsPath)) {
     return JSON.parse(fs.readFileSync(credentialsPath, "utf8"));
   }
