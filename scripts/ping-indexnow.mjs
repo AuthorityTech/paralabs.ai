@@ -9,6 +9,7 @@
  *   node scripts/ping-indexnow.mjs          # auto-detect via git diff
  *   node scripts/ping-indexnow.mjs --all    # submit every post URL
  *   node scripts/ping-indexnow.mjs --urls https://paralabs.ai/blog/my-post
+ *   node scripts/ping-indexnow.mjs --wait-live --all
  */
 
 import { execSync } from "node:child_process";
@@ -24,6 +25,7 @@ const HOST = "paralabs.ai";
 const BASE = `https://${HOST}`;
 const KEY_LOCATION = `${BASE}/${KEY}.txt`;
 const INDEXNOW_ENDPOINT = "https://api.indexnow.org/IndexNow";
+const DEFAULT_WAIT_SECONDS = Number(process.env.INDEXING_WAIT_SECONDS || 180);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -64,7 +66,8 @@ function urlsFromGitDiff() {
   }
 
   const urls = postFiles.map(postFileToUrl);
-  // Also submit the blog listing page so engines re-crawl it.
+  // Also submit the homepage and blog listing because both change when new research ships.
+  urls.push(BASE);
   urls.push(`${BASE}/blog`);
   return urls;
 }
@@ -76,6 +79,7 @@ function urlsFromGitLsFiles() {
 
   const files = ls.split("\n").filter(Boolean);
   const urls = files.map(postFileToUrl);
+  urls.push(BASE);
   urls.push(`${BASE}/blog`);
   return urls;
 }
@@ -84,6 +88,7 @@ function urlsFromAllPosts() {
   const postsDir = resolve(ROOT, "content/posts");
   const files = readdirSync(postsDir).filter((f) => f.endsWith(".md"));
   const urls = files.map((f) => postFileToUrl(`content/posts/${f}`));
+  urls.push(BASE);
   urls.push(`${BASE}/blog`);
   return urls;
 }
@@ -96,12 +101,46 @@ function urlsFromFlag(raw) {
     .filter(Boolean);
 }
 
+async function waitForLiveUrls(urls, waitSeconds = DEFAULT_WAIT_SECONDS) {
+  const deadline = Date.now() + waitSeconds * 1000;
+  const pending = new Set(urls);
+
+  while (pending.size > 0 && Date.now() < deadline) {
+    for (const url of [...pending]) {
+      const probeUrl = `${url}${url.includes("?") ? "&" : "?"}indexingProbe=${Date.now()}`;
+      try {
+        const res = await fetch(probeUrl, {
+          headers: { "cache-control": "no-cache" },
+          redirect: "follow",
+        });
+        if (res.status === 200) {
+          pending.delete(url);
+        } else {
+          console.log(`Waiting for ${url} — HTTP ${res.status}`);
+        }
+      } catch (error) {
+        console.log(`Waiting for ${url} — ${error.message}`);
+      }
+    }
+    if (pending.size > 0) {
+      await new Promise((resolveWait) => setTimeout(resolveWait, 5000));
+    }
+  }
+
+  if (pending.size > 0) {
+    console.error(`Timed out waiting for ${pending.size} live URL(s):`);
+    for (const url of pending) console.error(`  ${url}`);
+    process.exit(1);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 async function main() {
   const args = process.argv.slice(2);
+  const waitLive = args.includes("--wait-live");
 
   let urls;
 
@@ -110,7 +149,10 @@ async function main() {
     urls = urlsFromAllPosts();
   } else if (args.includes("--urls")) {
     const idx = args.indexOf("--urls");
-    const raw = args.slice(idx + 1).join(" ");
+    const raw = args
+      .slice(idx + 1)
+      .filter((arg) => !arg.startsWith("--"))
+      .join(" ");
     if (!raw) {
       console.error("--urls requires at least one URL argument.");
       process.exit(1);
@@ -128,6 +170,11 @@ async function main() {
 
   // Deduplicate
   urls = [...new Set(urls)];
+
+  if (waitLive) {
+    console.log(`Waiting for ${urls.length} URL(s) to be live before IndexNow submission.`);
+    await waitForLiveUrls(urls);
+  }
 
   console.log(`Submitting ${urls.length} URL(s) to IndexNow:`);
   urls.forEach((u) => console.log(`  ${u}`));

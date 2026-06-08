@@ -1,0 +1,74 @@
+name: Search Indexing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/posts/**"
+      - "src/app/blog/**"
+      - "src/app/pages/sitemap.ts"
+      - "src/app/blog/sitemap.ts"
+      - "src/app/sitemap.xml/route.ts"
+      - "src/app/robots.ts"
+      - "src/app/llms.txt/route.ts"
+      - "src/lib/site-manifest.ts"
+      - "scripts/ping-indexnow.mjs"
+      - "scripts/submit-gsc-sitemaps.mjs"
+      - ".github/workflows/search-indexing.yml"
+  workflow_dispatch:
+    inputs:
+      submit_all:
+        description: "Submit every current post URL to IndexNow"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: search-indexing-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  notify-search-engines:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and validate public machine layer
+        run: npm run build
+
+      - name: Wait for Vercel production deploy window
+        run: sleep 75
+
+      - name: Submit URLs to IndexNow
+        env:
+          INDEXING_WAIT_SECONDS: "240"
+        run: |
+          set -euo pipefail
+          ARGS="--wait-live"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.submit_all }}" = "true" ]; then
+            ARGS="--all ${ARGS}"
+          fi
+          node scripts/ping-indexnow.mjs ${ARGS}
+
+      - name: Submit sitemaps to Google Search Console
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/submit-gsc-sitemaps.mjs
