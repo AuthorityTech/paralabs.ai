@@ -1,6 +1,7 @@
 export const dynamic = "force-static";
 
 import { getAllPosts } from "@/lib/posts";
+import { getBlogPostCanonicalImageAsset, getSitemapImageUrls } from "@/lib/image-policy";
 import type { MetadataRoute } from "next";
 
 const BASE = "https://paralabs.ai";
@@ -19,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(p.lastModified || p.date || Date.now()),
       changeFrequency: "monthly" as const,
       priority: 0.75,
+      images: getSitemapImageUrls(getBlogPostCanonicalImageAsset(p)),
     })),
   ];
 }

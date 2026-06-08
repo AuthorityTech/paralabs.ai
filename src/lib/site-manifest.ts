@@ -1,5 +1,11 @@
 import { getAllPosts, getPost } from "./posts";
 import { BLOG_COPY, HOME_COPY } from "./page-copy";
+import {
+  getBlogPostCanonicalImageAsset,
+  getCanonicalImageAssets,
+  getHomeCanonicalImageAsset,
+  type CanonicalImageAsset,
+} from "./image-policy";
 
 const BASE = "https://paralabs.ai";
 
@@ -20,6 +26,7 @@ type MachineRoute = {
   relatedResearch: MachineLink[];
   supportLinks: MachineLink[];
   sourceUrls: string[];
+  primaryImage?: CanonicalImageAsset;
   softIssues: string[];
 };
 
@@ -172,6 +179,7 @@ export function buildMachineManifest() {
     relatedResearch: latestResearch,
     supportLinks: supportLinks(`${BASE}/index.md`),
     sourceUrls: [],
+    primaryImage: getHomeCanonicalImageAsset(),
     softIssues: [],
   };
 
@@ -208,6 +216,7 @@ export function buildMachineManifest() {
       relatedResearch: adjacentResearch(post.slug, 3),
       supportLinks: supportLinks(postMarkdownUrl(post.slug)),
       sourceUrls: fullPost ? extractSourceUrls(fullPost.content).slice(0, 20) : [],
+      primaryImage: getBlogPostCanonicalImageAsset(post),
       softIssues: [
         ...(!post.description ? ["missing description"] : []),
         ...(!post.date ? ["missing publish date"] : []),
@@ -226,6 +235,7 @@ export function buildMachineManifest() {
       routes: routes.length,
       warnings: routes.reduce((count, route) => count + route.softIssues.length, 0),
     },
+    imageAssets: getCanonicalImageAssets(posts),
     routes,
   };
 }

@@ -7,12 +7,8 @@ import remarkHtml from "remark-html";
 import type { Metadata } from "next";
 import Link from "next/link";
 import PostShareCard from "@/components/PostShareCard";
-import {
-  formatPostDisplayDate,
-  getPostShareImageUrl,
-  POST_SHARE_IMAGE_HEIGHT,
-  POST_SHARE_IMAGE_WIDTH,
-} from "@/lib/postShare";
+import { formatPostDisplayDate } from "@/lib/postShare";
+import { getBlogPostCanonicalImageAsset } from "@/lib/image-policy";
 import { generateBlogJsonLd, PL_BLOG_CONFIG } from "@editorialkit/schema";
 import { buildBoundedMetaDescription, buildBoundedMetaTitle } from "@/lib/machine-metadata";
 
@@ -33,8 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return {};
-  const image = getPostShareImageUrl(slug);
-  const imageAlt = `${post.title} — Para Labs research image`;
+  const imageAsset = getBlogPostCanonicalImageAsset(post);
   const metaTitle = buildBoundedMetaTitle(post.title);
   const metaDescription = buildBoundedMetaDescription(post.description);
   return {
@@ -48,13 +43,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${BASE}/blog/${slug}`,
       publishedTime: post.date,
       modifiedTime: post.lastModified || post.date,
-      images: [{ url: image, width: POST_SHARE_IMAGE_WIDTH, height: POST_SHARE_IMAGE_HEIGHT, alt: imageAlt }],
+      images: [{ url: imageAsset.imageUrl, width: imageAsset.width, height: imageAsset.height, alt: imageAsset.alt }],
     },
     twitter: {
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
-      images: [{ url: image, alt: imageAlt }],
+      images: [{ url: imageAsset.imageUrl, alt: imageAsset.alt }],
     },
   };
 }
@@ -75,7 +70,7 @@ export default async function PostPage({ params }: Props) {
     .process(normalizedContent);
   const html = normalizeProseHtml(processed.toString());
 
-  const image = getPostShareImageUrl(slug);
+  const imageAsset = getBlogPostCanonicalImageAsset(post);
 
   const blogLd = generateBlogJsonLd(
     {
@@ -85,7 +80,7 @@ export default async function PostPage({ params }: Props) {
       publishDate: post.date,
       lastModified: post.lastModified,
       body: html,
-      featuredImage: image,
+      featuredImage: imageAsset.imageUrl,
     },
     PL_BLOG_CONFIG,
   );
@@ -131,7 +126,12 @@ export default async function PostPage({ params }: Props) {
         </div>
       </header>
 
-      <PostShareCard date={post.date} tags={post.tags} />
+      <PostShareCard
+        imageUrl={imageAsset.imageUrl}
+        alt={imageAsset.alt}
+        width={imageAsset.width}
+        height={imageAsset.height}
+      />
 
       <div
         className="prose prose-nothing max-w-none prose-p:mb-5 prose-p:leading-[1.75] prose-p:text-nothing-primary prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-nothing-display prose-a:text-link prose-a:no-underline prose-strong:text-nothing-primary prose-li:text-nothing-secondary prose-blockquote:border-nothing-border prose-blockquote:text-nothing-secondary prose-code:text-nothing-primary prose-pre:rounded prose-pre:border prose-pre:border-nothing-border prose-pre:bg-nothing-raised prose-hr:border-nothing-border prose-h2:mb-4 prose-h2:mt-10 hover:prose-a:text-nothing-primary"
