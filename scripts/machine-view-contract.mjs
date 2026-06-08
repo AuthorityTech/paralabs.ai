@@ -9,6 +9,7 @@ export const machineViewContract = {
     "src/app/blog-md/[slug]/route.ts",
     "src/app/llms.txt/route.ts",
     "src/app/machine-manifest.json/route.ts",
+    "src/app/machine-sitemap.xml/route.ts",
     "src/lib/machine-metadata.ts",
     "src/lib/machine-content.ts",
     "src/lib/markdown-route.ts",
@@ -24,8 +25,10 @@ export const machineViewContract = {
     { file: "src/lib/site-manifest.ts", text: "/index.md" },
     { file: "src/lib/site-manifest.ts", text: "/blog.md" },
     { file: "src/lib/site-manifest.ts", text: "/machine-manifest.json" },
+    { file: "src/lib/site-manifest.ts", text: "/machine-sitemap.xml" },
     { file: "src/lib/site-manifest.ts", text: ".md" },
     { file: "src/lib/site-manifest.ts", text: "export function buildMachineManifest" },
+    { file: "src/lib/site-manifest.ts", text: "export function buildMachineSitemapXml" },
     { file: "src/lib/site-manifest.ts", text: "export function buildMachineReadableLinks" },
     { file: "src/lib/machine-metadata.ts", text: "export function buildBoundedMetaTitle" },
     { file: "src/lib/machine-metadata.ts", text: "export function buildBoundedMetaDescription" },
@@ -59,10 +62,14 @@ export const machineViewContract = {
   ],
   llms: {
     path: "llms.txt",
-    required: ["# Para Labs", "Machine-Readable Endpoints", "/index.md", "/blog.md", "/machine-manifest.json", ".md"],
+    required: ["# Para Labs", "Machine-Readable Endpoints", "/index.md", "/blog.md", "/machine-manifest.json", "/machine-sitemap.xml", "/blog-md/", ".md"],
   },
   manifest: {
     path: "machine-manifest.json",
     minRoutes: 3,
+  },
+  machineSitemap: {
+    path: "machine-sitemap.xml",
+    required: ["/index.md", "/blog.md", "/llms.txt", "/machine-manifest.json", "/blog-md/"],
   },
 };

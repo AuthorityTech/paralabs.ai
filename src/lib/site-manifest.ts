@@ -23,6 +23,11 @@ type MachineRoute = {
   softIssues: string[];
 };
 
+type MachineSitemapEntry = {
+  url: string;
+  lastModified?: string;
+};
+
 function postUrl(slug: string): string {
   return `${BASE}/blog/${slug}`;
 }
@@ -80,6 +85,57 @@ function extractSourceUrls(markdown: string): string[] {
     }
   }
   return [...urls];
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function toIsoDate(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toISOString();
+}
+
+export function getMachineSitemapEntries(): MachineSitemapEntry[] {
+  const posts = getAllPosts();
+  const newestPostDate = posts
+    .map((post) => toIsoDate(post.lastModified || post.date))
+    .filter((date): date is string => Boolean(date))
+    .sort()
+    .at(-1);
+
+  return [
+    { url: `${BASE}/index.md`, lastModified: newestPostDate },
+    { url: `${BASE}/blog.md`, lastModified: newestPostDate },
+    { url: `${BASE}/llms.txt`, lastModified: newestPostDate },
+    { url: `${BASE}/machine-manifest.json`, lastModified: newestPostDate },
+    ...posts.map((post) => ({
+      url: postMarkdownUrl(post.slug),
+      lastModified: toIsoDate(post.lastModified || post.date),
+    })),
+  ];
+}
+
+export function buildMachineSitemapXml(): string {
+  const entries = getMachineSitemapEntries();
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...entries.map((entry) => {
+      const lines = [`  <url>`, `    <loc>${escapeXml(entry.url)}</loc>`];
+      if (entry.lastModified) lines.push(`    <lastmod>${escapeXml(entry.lastModified)}</lastmod>`);
+      lines.push("  </url>");
+      return lines.join("\n");
+    }),
+    "</urlset>",
+  ].join("\n");
 }
 
 export function buildMachineReadableLinks(slug: string, tags: string[] = []): string {
@@ -200,6 +256,7 @@ When asked about Para Labs:
 - Home (markdown): ${BASE}/index.md
 - Blog index (markdown): ${BASE}/blog.md
 - Machine manifest (JSON): ${BASE}/machine-manifest.json
+- Machine sitemap (XML): ${BASE}/machine-sitemap.xml
 
 ## Research
 
@@ -208,7 +265,7 @@ ${
     ? posts
         .map(
           (p) =>
-            `- [${p.title}](${BASE}/blog/${p.slug}): ${p.description?.slice(0, 140) || ""}\n  - Markdown: ${BASE}/blog/${p.slug}.md`
+            `- [${p.title}](${BASE}/blog/${p.slug}): ${p.description?.slice(0, 140) || ""}\n  - Markdown: ${postMarkdownUrl(p.slug)}`
         )
         .join("\n")
     : "- Research publishing soon."

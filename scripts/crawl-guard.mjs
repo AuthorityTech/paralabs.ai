@@ -146,6 +146,16 @@ function validateManifest(content, location) {
   });
 }
 
+function validateXmlSitemap(content, location, required = []) {
+  requireIncludes(content, ['<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'], location);
+  requireIncludes(content, required, location);
+  const locs = [...content.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  if (!locs.length) {
+    fail(location, "Sitemap contains no <loc> entries.");
+  }
+  locs.forEach((loc, index) => validateUrl(`${location}.loc[${index}]`, loc));
+}
+
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
@@ -192,6 +202,17 @@ if (machineViewContract.manifest) {
   if (manifest) validateManifest(manifest, machineViewContract.manifest.path);
 }
 
+if (machineViewContract.machineSitemap) {
+  const machineSitemap = readOutput(machineViewContract.machineSitemap.path);
+  if (machineSitemap) {
+    validateXmlSitemap(
+      machineSitemap,
+      machineViewContract.machineSitemap.path,
+      machineViewContract.machineSitemap.required,
+    );
+  }
+}
+
 for (const collection of machineViewContract.contentCollections || []) {
   const dir = path.join(ROOT, collection.dir);
   const files = fs.existsSync(dir)
@@ -218,7 +239,7 @@ for (const collection of machineViewContract.contentCollections || []) {
 
 const robots = readOutput("robots.txt", { required: false });
 if (robots) {
-  requireIncludes(robots, ["/blog-md/", "/machine-manifest.json"], "robots.txt");
+  requireIncludes(robots, ["/blog-md/", "/machine-manifest.json", "/machine-sitemap.xml"], "robots.txt");
   if (/Disallow:\s*\/blog-md\//i.test(robots) || /Disallow:\s*\/machine-manifest\.json/i.test(robots)) {
     fail("robots.txt", "Machine-readable routes must not be disallowed.");
   }
