@@ -2,6 +2,7 @@ import { getPost } from "@/lib/posts";
 import {
   buildBlogIndexMarkdown,
   buildHomePageMarkdown,
+  buildMachineReadableLinks,
 } from "@/lib/site-manifest";
 
 const BASE = "https://paralabs.ai";
@@ -43,5 +44,7 @@ ${tags ? `- ${tags}` : ""}
 ---
 
 ${post.content.trim()}
+
+${buildMachineReadableLinks(post.slug, post.tags)}
 `;
 }

@@ -48,6 +48,104 @@ function requireIncludes(content, checks, location) {
   }
 }
 
+function validateUrl(location, value) {
+  if (typeof value !== "string" || !value.trim()) {
+    fail(location, "Missing URL.");
+    return;
+  }
+  try {
+    new URL(value);
+  } catch {
+    fail(location, `Invalid URL: ${JSON.stringify(value)}.`);
+    return;
+  }
+  if (/[][()]/.test(value)) {
+    fail(location, `Markdown control character found in URL: ${value}`);
+  }
+}
+
+function validateMachineLink(location, link) {
+  if (!link || typeof link !== "object") {
+    fail(location, "Machine link must be an object.");
+    return;
+  }
+  if (typeof link.label !== "string" || !link.label.trim() || /^https?:\/\//.test(link.label)) {
+    fail(location, `Bad machine link label: ${JSON.stringify(link.label)}.`);
+  }
+  validateUrl(`${location}.url`, link.url);
+}
+
+function validateMarkdown(location, content) {
+  const lines = content.split(/\n/);
+  lines.forEach((line, index) => {
+    if (/\[[^\]]+\]\([^)\n]*$/.test(line)) {
+      fail(location, `Line ${index + 1} has an unterminated markdown link.`);
+    }
+    if (/https?:\/\/[^\s]+]\(/.test(line)) {
+      fail(location, `Line ${index + 1} has a crossed markdown URL/link artifact.`);
+    }
+    const urlLabel = line.match(/\[(https?:\/\/[^\]]+)\]\(/);
+    if (urlLabel) {
+      fail(location, `Line ${index + 1} uses a URL as a markdown link label.`);
+    }
+  });
+}
+
+function validateGeneratedMachineSection(location, content) {
+  validateMarkdown(location, content);
+  requireIncludes(
+    content,
+    ["Machine-readable related links", "Primary concept:", "Research index:", "Machine manifest:"],
+    location,
+  );
+}
+
+function validateManifest(content, location) {
+  let manifest;
+  try {
+    manifest = JSON.parse(content);
+  } catch (error) {
+    fail(location, `Invalid JSON: ${error.message}`);
+    return;
+  }
+
+  const routes = Array.isArray(manifest.routes) ? manifest.routes : [];
+  if (routes.length < (machineViewContract.manifest?.minRoutes || 1)) {
+    fail(location, `Manifest route count too low: ${routes.length}.`);
+  }
+
+  routes.forEach((route, index) => {
+    const routeLocation = `${location}.routes[${index}]`;
+    validateUrl(`${routeLocation}.url`, route?.url);
+    validateUrl(`${routeLocation}.markdownUrl`, route?.markdownUrl);
+    if (typeof route?.title !== "string" || !route.title.trim()) {
+      fail(routeLocation, "Missing title.");
+    }
+    if (typeof route?.summary !== "string" || !route.summary.trim()) {
+      fail(routeLocation, "Missing summary.");
+    }
+
+    const generatedLinks = [
+      route?.primaryConcept,
+      ...(Array.isArray(route?.relatedConcepts) ? route.relatedConcepts : []),
+      ...(Array.isArray(route?.relatedResearch) ? route.relatedResearch : []),
+      ...(Array.isArray(route?.supportLinks) ? route.supportLinks : []),
+    ].filter(Boolean);
+
+    if (!generatedLinks.length) {
+      fail(routeLocation, "No generated machine links.");
+    }
+
+    generatedLinks.forEach((link, linkIndex) => {
+      validateMachineLink(`${routeLocation}.links[${linkIndex}]`, link);
+    });
+
+    if (Array.isArray(route?.sourceUrls)) {
+      route.sourceUrls.forEach((url, sourceIndex) => validateUrl(`${routeLocation}.sourceUrls[${sourceIndex}]`, url));
+    }
+  });
+}
+
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
@@ -65,13 +163,6 @@ function slugFromFile(file, data) {
   return file.replace(/\.md$/, "").replace(/^\d{4}-\d{2}-\d{2}-/, "");
 }
 
-function newestMarkdownFile(relativeDir) {
-  const dir = path.join(ROOT, relativeDir);
-  if (!fs.existsSync(dir)) return null;
-  const files = fs.readdirSync(dir).filter((name) => name.endsWith(".md") && !name.startsWith("_")).sort();
-  return files.at(-1) || null;
-}
-
 if (!fs.existsSync(OUT_DIR)) {
   console.error("crawl-guard: build output not found. Run npm run build first.");
   process.exit(1);
@@ -80,6 +171,7 @@ if (!fs.existsSync(OUT_DIR)) {
 for (const page of machineViewContract.staticMarkdown || []) {
   const content = readOutput(page.path);
   if (!content) continue;
+  validateGeneratedMachineSection(page.path, content);
   const bytes = Buffer.byteLength(content, "utf8");
   if (bytes < page.minBytes) {
     fail(page.path, `Machine markdown too thin: ${bytes} < ${page.minBytes} bytes.`);
@@ -89,29 +181,48 @@ for (const page of machineViewContract.staticMarkdown || []) {
 
 if (machineViewContract.llms) {
   const llms = readOutput(machineViewContract.llms.path);
-  if (llms) requireIncludes(llms, machineViewContract.llms.required, machineViewContract.llms.path);
+  if (llms) {
+    validateMarkdown(machineViewContract.llms.path, llms);
+    requireIncludes(llms, machineViewContract.llms.required, machineViewContract.llms.path);
+  }
+}
+
+if (machineViewContract.manifest) {
+  const manifest = readOutput(machineViewContract.manifest.path);
+  if (manifest) validateManifest(manifest, machineViewContract.manifest.path);
 }
 
 for (const collection of machineViewContract.contentCollections || []) {
-  const file = newestMarkdownFile(collection.dir);
-  if (!file) {
+  const dir = path.join(ROOT, collection.dir);
+  const files = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter((name) => name.endsWith(".md") && !name.startsWith("_")).sort()
+    : [];
+  if (!files.length) {
     fail(collection.dir, "No markdown content files found for sample route check.");
     continue;
   }
-  const raw = fs.readFileSync(path.join(ROOT, collection.dir, file), "utf8");
-  const data = parseFrontmatter(raw);
-  const slug = slugFromFile(file, data);
-  const routePath = `${collection.routePrefix}/${slug}`;
-  if (!routeExists(routePath)) {
-    fail(routePath, "Dynamic markdown route missing in build output.");
-    continue;
+  for (const file of files) {
+    const raw = fs.readFileSync(path.join(ROOT, collection.dir, file), "utf8");
+    const data = parseFrontmatter(raw);
+    const slug = slugFromFile(file, data);
+    const routePath = `${collection.routePrefix}/${slug}`;
+    if (!routeExists(routePath)) {
+      fail(routePath, "Dynamic markdown route missing in build output.");
+      continue;
+    }
+    const rendered = readOutput(routePath, { required: false });
+    if (rendered && data.title) requireIncludes(rendered, [data.title], routePath);
+    if (rendered) validateGeneratedMachineSection(routePath, rendered);
   }
-  const rendered = readOutput(routePath, { required: false });
-  if (rendered && data.title) requireIncludes(rendered, [data.title], routePath);
 }
 
 const robots = readOutput("robots.txt", { required: false });
-if (robots) requireIncludes(robots, ["/blog-md/"], "robots.txt");
+if (robots) {
+  requireIncludes(robots, ["/blog-md/", "/machine-manifest.json"], "robots.txt");
+  if (/Disallow:\s*\/blog-md\//i.test(robots) || /Disallow:\s*\/machine-manifest\.json/i.test(robots)) {
+    fail("robots.txt", "Machine-readable routes must not be disallowed.");
+  }
+}
 
 if (failures.length) {
   console.error(`crawl-guard failed with ${failures.length} issue(s):`);

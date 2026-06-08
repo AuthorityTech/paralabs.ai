@@ -7,12 +7,13 @@ const AI_AND_SEARCH_BOTS = ["Googlebot","Bingbot","PerplexityBot","GPTBot","Chat
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: "/blog-md/" },
+      { userAgent: "*", allow: ["/", "/index.md", "/blog.md", "/blog-md/", "/llms.txt", "/machine-manifest.json"] },
       { userAgent: AI_AND_SEARCH_BOTS, allow: "/" },
     ],
     sitemap: [
       "https://paralabs.ai/sitemap.xml",
       "https://paralabs.ai/blog/sitemap.xml",
+      "https://paralabs.ai/pages/sitemap.xml",
     ],
   };
 }

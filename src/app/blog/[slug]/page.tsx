@@ -14,6 +14,7 @@ import {
   POST_SHARE_IMAGE_WIDTH,
 } from "@/lib/postShare";
 import { generateBlogJsonLd, PL_BLOG_CONFIG } from "@editorialkit/schema";
+import { buildBoundedMetaDescription, buildBoundedMetaTitle } from "@/lib/machine-metadata";
 
 export const dynamicParams = true;
 export const revalidate = 3600;
@@ -34,13 +35,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return {};
   const image = getPostShareImageUrl(slug);
   const imageAlt = `${post.title} — Para Labs research image`;
+  const metaTitle = buildBoundedMetaTitle(post.title);
+  const metaDescription = buildBoundedMetaDescription(post.description);
   return {
-    title: post.title,
-    description: post.description,
+    title: { absolute: metaTitle },
+    description: metaDescription,
     alternates: { canonical: `${BASE}/blog/${slug}` },
     openGraph: {
-      title: post.title + " — Para Labs",
-      description: post.description,
+      title: metaTitle,
+      description: metaDescription,
       type: "article",
       url: `${BASE}/blog/${slug}`,
       publishedTime: post.date,
@@ -49,8 +52,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title + " — Para Labs",
-      description: post.description,
+      title: metaTitle,
+      description: metaDescription,
       images: [{ url: image, alt: imageAlt }],
     },
   };
