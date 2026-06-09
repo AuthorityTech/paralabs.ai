@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "brain": {
+      "type": "http",
+      "url": "https://brain.authoritytech.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BRAIN_MCP_TOKEN}",
+        "X-Brain-Agent": "claude-repo"
+      }
+    }
+  }
+}
