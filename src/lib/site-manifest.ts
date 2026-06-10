@@ -63,6 +63,7 @@ function supportLinks(markdownUrl: string): MachineLink[] {
   return [
     { label: "Machine markdown", url: markdownUrl },
     { label: "Para Labs research index", url: `${BASE}/blog` },
+    { label: "MRI Score", url: "https://machinerelations.ai/glossary/mri-score" },
     { label: "LLM instructions", url: `${BASE}/llms.txt` },
   ];
 }
@@ -170,11 +171,12 @@ export function buildMachineManifest() {
     markdownUrl: `${BASE}/index.md`,
     title: HOME_COPY.name,
     summary: HOME_COPY.machineSummary,
-    concepts: ["AI brand visibility", "AI discovery", "machine-readable brand research"],
+    concepts: ["AI brand visibility", "AI discovery", "machine-readable brand research", "MRI Score"],
     primaryConcept: { label: "AI brand visibility", url: `${BASE}/blog` },
     relatedConcepts: [
       { label: "AI discovery", url: `${BASE}/blog` },
       { label: "Generative engine optimization", url: `${BASE}/blog` },
+      { label: "MRI Score", url: "https://machinerelations.ai/glossary/mri-score" },
     ],
     relatedResearch: latestResearch,
     supportLinks: supportLinks(`${BASE}/index.md`),
@@ -189,11 +191,12 @@ export function buildMachineManifest() {
     markdownUrl: `${BASE}/blog.md`,
     title: "Para Labs Research Index",
     summary: BLOG_COPY.machineDescription,
-    concepts: ["AI brand visibility", "AI citations", "answer engine research"],
+    concepts: ["AI brand visibility", "AI citations", "answer engine research", "MRI Score"],
     primaryConcept: { label: "AI brand visibility research", url: `${BASE}/blog` },
     relatedConcepts: [
       { label: "AI citations", url: `${BASE}/blog` },
       { label: "Answer engine research", url: `${BASE}/blog` },
+      { label: "MRI Score", url: "https://machinerelations.ai/glossary/mri-score" },
     ],
     relatedResearch: latestResearch,
     supportLinks: supportLinks(`${BASE}/blog.md`),
