@@ -1,5 +1,5 @@
 # Brain MCP — AuthorityTech knowledge graph (HTTP; token from env/cloud secret)
-[mcp_servers.brain]
+[mcp_servers.brain_cloud]
 url = "https://brain.authoritytech.io/mcp"
 bearer_token_env_var = "BRAIN_MCP_TOKEN"
 http_headers = { "X-Brain-Agent" = "codex-repo" }
