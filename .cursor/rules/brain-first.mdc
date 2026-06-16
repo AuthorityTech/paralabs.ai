@@ -1,0 +1,17 @@
+---
+description: Query the AuthorityTech Brain before cross-system code changes
+globs:
+alwaysApply: true
+---
+
+This repo is one node in a cross-repo system. Grep only sees this repo; the contract,
+schema, deployment map, and agent ecosystem that span repos live in the AuthorityTech Brain.
+
+If a task touches **Ada, OpenClaw, Jarvis, the gateway, deployment, the prod DB/schema,
+cross-repo ownership, or how systems connect** → query the Brain BEFORE local code changes:
+- `mcp__brain__query_graph` (native), or `authoritytech-brain query "<the task>"`.
+- Treating a cross-system contract change as app-local is the failure this rule prevents.
+
+After merging a cross-repo or contract change → record a Brain observation so the next
+agent inherits it: `authoritytech-brain observe add --subject ... --relation ... --object ...
+--statement ... --cite source:<repo>/<file>@Lx-Ly --agent cursor --session <id>`.
