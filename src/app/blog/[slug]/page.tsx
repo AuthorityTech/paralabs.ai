@@ -1,9 +1,6 @@
 import { getPost } from "@/lib/posts";
-import { normalizeMarkdown, normalizeProseHtml } from "@/lib/normalizeMarkdown";
+import { renderMarkdownWithSectionNav } from "@/lib/section-nav";
 import { notFound } from "next/navigation";
-import { remark } from "remark";
-import remarkGfm from "remark-gfm";
-import remarkHtml from "remark-html";
 import type { Metadata } from "next";
 import Link from "next/link";
 import PostShareCard from "@/components/PostShareCard";
@@ -63,12 +60,8 @@ export default async function PostPage({ params }: Props) {
   const post = getPost(slug);
   if (!post) notFound();
 
-  const normalizedContent = normalizeMarkdown(post.content);
-  const processed = await remark()
-    .use(remarkGfm)
-    .use(remarkHtml, { sanitize: false })
-    .process(normalizedContent);
-  const html = normalizeProseHtml(processed.toString());
+  const { html, sectionNav } = await renderMarkdownWithSectionNav(post.content);
+  const showSectionNav = sectionNav.length >= 3;
 
   const imageAsset = getBlogPostCanonicalImageAsset(post);
 
@@ -86,57 +79,85 @@ export default async function PostPage({ params }: Props) {
   );
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16 md:py-20">
+    <div
+      className={
+        showSectionNav
+          ? "mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 py-16 md:py-20 xl:grid-cols-[minmax(0,42rem)_14rem]"
+          : "mx-auto max-w-2xl px-6 py-16 md:py-20"
+      }
+    >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: blogLd }} />
 
-      <nav className="mb-12">
-        <Link
-          href="/blog"
-          className="font-mono text-[11px] uppercase tracking-[0.08em] text-link transition-colors duration-200 ease-nothing hover:text-nothing-primary"
-        >
-          &larr; Research
-        </Link>
-      </nav>
+      <main className={showSectionNav ? "mx-auto w-full max-w-2xl xl:mx-0" : "w-full"}>
+        <nav className="mb-12">
+          <Link
+            href="/blog"
+            className="font-mono text-[11px] uppercase tracking-[0.08em] text-link transition-colors duration-200 ease-nothing hover:text-nothing-primary"
+          >
+            &larr; Research
+          </Link>
+        </nav>
 
-      <header className="mb-10">
-        <h1 data-speakable="headline" className="mb-5 font-display text-[1.65rem] font-medium leading-tight tracking-[-0.02em] text-nothing-display md:text-[2rem]">
-          {post.title}
-        </h1>
-        {post.description && (
-          <p data-speakable="summary" className="mb-6 text-[0.95rem] leading-relaxed text-nothing-secondary">
-            {post.description}
-          </p>
-        )}
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-nothing-secondary">Para Labs Research</span>
-          <span className="text-nothing-border">&middot;</span>
-          <time className="font-mono text-[11px] uppercase tracking-[0.06em] text-nothing-disabled">{formatDate(post.date)}</time>
-          {post.tags && post.tags.length > 0 && (
-            <>
-              <span className="text-nothing-border">&middot;</span>
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
-                  <span key={tag} className="border border-nothing-borderHi bg-nothing-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-nothing-secondary">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </>
+        <header className="mb-10">
+          <h1 data-speakable="headline" className="mb-5 font-display text-[1.65rem] font-medium leading-tight tracking-[-0.02em] text-nothing-display md:text-[2rem]">
+            {post.title}
+          </h1>
+          {post.description && (
+            <p data-speakable="summary" className="mb-6 text-[0.95rem] leading-relaxed text-nothing-secondary">
+              {post.description}
+            </p>
           )}
-        </div>
-      </header>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-nothing-secondary">Para Labs Research</span>
+            <span className="text-nothing-border">&middot;</span>
+            <time className="font-mono text-[11px] uppercase tracking-[0.06em] text-nothing-disabled">{formatDate(post.date)}</time>
+            {post.tags && post.tags.length > 0 && (
+              <>
+                <span className="text-nothing-border">&middot;</span>
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map((tag) => (
+                    <span key={tag} className="border border-nothing-borderHi bg-nothing-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-nothing-secondary">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </header>
 
-      <PostShareCard
-        imageUrl={imageAsset.imageUrl}
-        alt={imageAsset.alt}
-        width={imageAsset.width}
-        height={imageAsset.height}
-      />
+        <PostShareCard
+          imageUrl={imageAsset.imageUrl}
+          alt={imageAsset.alt}
+          width={imageAsset.width}
+          height={imageAsset.height}
+        />
 
-      <div
-        className="prose prose-nothing max-w-none prose-p:mb-5 prose-p:leading-[1.75] prose-p:text-nothing-primary prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-nothing-display prose-a:text-link prose-a:no-underline prose-strong:text-nothing-primary prose-li:text-nothing-secondary prose-blockquote:border-nothing-border prose-blockquote:text-nothing-secondary prose-code:text-nothing-primary prose-pre:rounded prose-pre:border prose-pre:border-nothing-border prose-pre:bg-nothing-raised prose-hr:border-nothing-border prose-h2:mb-4 prose-h2:mt-10 hover:prose-a:text-nothing-primary"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+        <div
+          className="prose prose-nothing max-w-none prose-p:mb-5 prose-p:leading-[1.75] prose-p:text-nothing-primary prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-nothing-display prose-a:text-link prose-a:no-underline prose-strong:text-nothing-primary prose-li:text-nothing-secondary prose-blockquote:border-nothing-border prose-blockquote:text-nothing-secondary prose-code:text-nothing-primary prose-pre:rounded prose-pre:border prose-pre:border-nothing-border prose-pre:bg-nothing-raised prose-hr:border-nothing-border prose-h2:mb-4 prose-h2:mt-10 hover:prose-a:text-nothing-primary"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </main>
+
+      {showSectionNav && (
+        <aside className="hidden xl:block">
+          <nav aria-label="Article sections" className="sticky top-24 border-l border-nothing-border pl-5">
+            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.1em] text-nothing-disabled">On this page</p>
+            <ol className="space-y-3">
+              {sectionNav.map((item) => (
+                <li key={item.id} className={item.level === 3 ? "pl-3" : undefined}>
+                  <a
+                    href={`#${item.id}`}
+                    className="block text-[12px] leading-snug text-nothing-secondary transition-colors duration-200 ease-nothing hover:text-link"
+                  >
+                    {item.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        </aside>
+      )}
     </div>
   );
 }
