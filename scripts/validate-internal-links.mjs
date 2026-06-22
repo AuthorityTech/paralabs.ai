@@ -3,18 +3,23 @@
  * validate-internal-links.mjs — portable, zero-dependency CI gate.
  *
  * Fails (exit 1) when any published content file links to a same-site CONTENT
- * route that does not resolve to a real published file. This is the post-push
- * backstop for the failure class the editorial publisher's internal-link-guard
- * already strips pre-push: dangling same-site links forcing a re-publish.
+ * route that does not resolve. A link is VALID when it (a) maps to a real
+ * published content file, (b) matches a configured REDIRECT source (the route
+ * was renamed/moved and the server 301s it — NOT a dead link), or (c) is the
+ * `.md` machine-readable mirror of a valid route. Only links that satisfy none
+ * of these are dead. This is the post-push backstop for the failure class the
+ * editorial publisher's internal-link-guard already handles pre-push.
  *
  * Design (judo, not force): the gate is scoped to *content lane prefixes*
  * (`/blog/`, `/curated/`, `/glossary/`, `/research/`, `/industries/`, ...) declared
  * in `internal-links.config.json`. A link is validated only when its pathname falls
  * under a configured lane prefix; everything else (static pages, anchors, externals)
- * is out of scope. This means there is NO site-wide route table to keep current — the
- * set of valid routes is derived from the content files themselves, so the gate is
- * self-maintaining as content is added or removed. The same config drives the `--heal`
- * pass that strips existing dead links so a repo can be brought to green once.
+ * is out of scope. There is NO site-wide route table to keep current — valid routes
+ * are derived from the content files themselves AND the site's own redirect config,
+ * so the gate is self-maintaining as content is renamed, added, or removed. The same
+ * config drives the `--heal` pass: a link to renamed content is REWRITTEN to follow
+ * the redirect to its live destination (auto-update), and only a genuinely dead link
+ * (no file, no redirect) is stripped.
  *
  * Identical byte-for-byte across every content repo. The canonical copy + its
  * regression lock live in AuthorityTech/jarvis (jarvis-runtime/). Vendored into each
@@ -28,8 +33,17 @@
  *     { "dir": "content/industries", "prefix": "/industries", "nested": true }
  *   ],
  *   "mdMirror": true,          // also accept `<route>.md` machine-readable mirrors
- *   "allowlist": ["/blog/some-legacy-slug"]  // optional explicit valid paths
+ *   "allowlist": ["/blog/some-legacy-slug"],  // optional explicit valid paths
+ *   "redirects": [             // optional; defaults to auto-detecting the files below
+ *     { "file": "next.config.js", "type": "next" },
+ *     { "file": "vercel.json", "type": "vercel" }
+ *   ]
  * }
+ *
+ * Redirect parsing is read-only and code-free: Next configs are scanned for
+ * `source`/`destination` string-literal pairs inside the `redirects()` block (never
+ * executed); Vercel configs are JSON-parsed for `redirects[]`. Static and
+ * parameterized (`:slug`) sources are both supported.
  *
  * Lane options:
  *   dir        content directory, relative to repo root (recursed)
@@ -45,7 +59,7 @@
  *
  * Usage:
  *   node scripts/validate-internal-links.mjs            # gate: exit 1 on dead links
- *   node scripts/validate-internal-links.mjs --heal     # rewrite files, strip dead links
+ *   node scripts/validate-internal-links.mjs --heal     # rewrite files, fix/strip links
  *   node scripts/validate-internal-links.mjs --json     # machine-readable report
  */
 import fs from 'node:fs';
@@ -54,6 +68,7 @@ import path from 'node:path';
 const MARKDOWN_LINK = /\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const HTML_ANCHOR = /<a\b[^>]*?\bhref=(["'])([^"']+)\1[^>]*>([\s\S]*?)<\/a>/gi;
 const DATE_PREFIX = /^\d{4}-\d{2}-\d{2}-/;
+const REDIRECT_MAX_HOPS = 10;
 
 function readConfig(root) {
   const p = path.join(root, 'internal-links.config.json');
@@ -127,6 +142,139 @@ function sameSitePathname(url, siteHost) {
   return pathname.split(/[?#]/)[0].replace(/\/+$/, '') || '/';
 }
 
+/* ----------------------------- Redirect model ----------------------------- */
+
+/** Turn a Next/Vercel path pattern into a matcher. `:name` matches one segment. */
+function sourceToMatcher(source) {
+  const src = source.replace(/\/+$/, '') || '/';
+  const paramNames = [];
+  // Escape regex specials first (turns * -> \*, + -> \+, leaves : intact), then
+  // expand :params. This way literal dots/parens in slugs can never break out.
+  let regex = src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  regex = regex.replace(/:([A-Za-z0-9_]+)(\\\*|\\\+)?/g, (_m, name, mod) => {
+    paramNames.push(name);
+    if (mod === '\\*') return '(.*)';
+    if (mod === '\\+') return '(.+)';
+    return '([^/]+)';
+  });
+  return { regex: new RegExp(`^${regex}$`), paramNames };
+}
+
+/** Extract source/destination pairs from the redirects() block of a Next config. */
+function parseNextRedirects(raw) {
+  const start = raw.indexOf('redirects()');
+  if (start === -1) return [];
+  let block = raw.slice(start);
+  const rewrites = block.indexOf('rewrites()');
+  if (rewrites !== -1) block = block.slice(0, rewrites); // never treat rewrites as redirects
+  const out = [];
+  const re = /source:\s*(["'`])([^"'`]+)\1[\s\S]*?destination:\s*(["'`])([^"'`]+)\3/g;
+  let m;
+  while ((m = re.exec(block))) out.push({ source: m[2], destination: m[4] });
+  return out;
+}
+
+/** Extract redirects[] from a Vercel config. */
+function parseVercelRedirects(raw) {
+  let j;
+  try { j = JSON.parse(raw); } catch { return []; }
+  return (j.redirects || [])
+    .filter((r) => r && r.source && r.destination)
+    .map((r) => ({ source: r.source, destination: r.destination }));
+}
+
+/** Load + compile the site's redirect table from config (or auto-detected files). */
+function loadRedirects(root, config) {
+  const specs = config.redirects || [
+    { file: 'next.config.js', type: 'next' },
+    { file: 'next.config.mjs', type: 'next' },
+    { file: 'vercel.json', type: 'vercel' },
+  ];
+  const entries = [];
+  for (const spec of specs) {
+    const p = path.join(root, spec.file);
+    if (!fs.existsSync(p)) continue;
+    const raw = fs.readFileSync(p, 'utf8');
+    const parsed = spec.type === 'vercel' ? parseVercelRedirects(raw) : parseNextRedirects(raw);
+    entries.push(...parsed);
+  }
+  return entries.map((e) => ({ ...e, ...sourceToMatcher(e.source) }));
+}
+
+/** First redirect whose source matches `pathname`, with params substituted in. */
+function redirectMatch(pathname, redirects) {
+  for (const r of redirects) {
+    const m = pathname.match(r.regex);
+    if (!m) continue;
+    let dest = r.destination;
+    r.paramNames.forEach((name, i) => { dest = dest.split(`:${name}`).join(m[i + 1] ?? ''); });
+    return { destination: dest };
+  }
+  return null;
+}
+
+/**
+ * Follow a redirect chain to its terminal target. Returns null when `pathname` is
+ * not a redirect source. Otherwise { terminal, external } where `terminal` is a
+ * same-site pathname (external=false) or a full off-site URL (external=true).
+ */
+function resolveRedirect(pathname, redirects, siteHost, depth = 0) {
+  if (depth > REDIRECT_MAX_HOPS) return { terminal: pathname, external: false };
+  const hit = redirectMatch(pathname, redirects);
+  if (!hit) return null;
+  let dest = hit.destination.split('#')[0].trim();
+  if (/^https?:\/\//i.test(dest)) {
+    const sp = sameSitePathname(dest, siteHost);
+    if (sp == null) return { terminal: dest.replace(/\/+$/, '') || dest, external: true };
+    dest = sp;
+  } else {
+    dest = dest.replace(/\/+$/, '') || '/';
+  }
+  const further = resolveRedirect(dest, redirects, siteHost, depth + 1);
+  return further || { terminal: dest, external: false };
+}
+
+/* ------------------------------- Validation ------------------------------- */
+
+/** In-scope = under a content lane prefix, but not the bare lane index itself. */
+function inScope(pathname, lanePrefixes) {
+  return pathname != null
+    && lanePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+    && !lanePrefixes.includes(pathname);
+}
+
+/** Does this same-site pathname map to a real published content file (or its .md mirror)? */
+function resolvesContent(pathname, validPaths) {
+  if (pathname == null) return false;
+  const c = pathname.endsWith('.md') ? pathname.slice(0, -3) : pathname;
+  return validPaths.has(c) || validPaths.has(pathname);
+}
+
+/**
+ * Resolve an in-scope pathname to what it actually reaches:
+ *   content          -> a real content file
+ *   redirect-internal-> 301 chain terminates at a real internal content file (`target`)
+ *   redirect-external-> 301 chain terminates off-site (`target` = full URL)
+ *   dead             -> nothing reachable (no file; or a 301 that lands on a 404)
+ * A redirect whose terminal is internal-but-nonexistent is DEAD: the server 301s,
+ * then 404s. That is a broken link, not a valid one.
+ */
+function resolveTarget(pathname, validPaths, redirects, siteHost) {
+  if (resolvesContent(pathname, validPaths)) return { status: 'content', target: pathname };
+  const term = resolveRedirect(pathname, redirects, siteHost);
+  if (term) {
+    if (term.external) return { status: 'redirect-external', target: term.terminal };
+    if (resolvesContent(term.terminal, validPaths)) return { status: 'redirect-internal', target: term.terminal };
+  }
+  return { status: 'dead' };
+}
+
+/** Is this same-site pathname an in-scope CONTENT route that does not resolve? */
+function deadContentPath(pathname, lanePrefixes, validPaths, redirects = [], siteHost = null) {
+  if (!inScope(pathname, lanePrefixes)) return false;
+  return resolveTarget(pathname, validPaths, redirects, siteHost).status === 'dead';
+}
+
 function buildModel(root, config) {
   const lanePrefixes = config.lanes.map((l) => l.prefix.replace(/\/+$/, ''));
   const validPaths = new Set(config.allowlist || []);
@@ -140,29 +288,18 @@ function buildModel(root, config) {
       files.push({ file, raw });
     }
   }
-  return { lanePrefixes, validPaths, files };
+  const redirects = loadRedirects(root, config);
+  return { lanePrefixes, validPaths, files, redirects };
 }
 
-/** Is this same-site pathname an in-scope CONTENT route that does not resolve? */
-function deadContentPath(pathname, lanePrefixes, validPaths) {
-  if (pathname == null) return false;
-  const inScope = lanePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-  if (!inScope) return false;
-  // A bare lane index (/blog) is not a post route; only /blog/<x> is validated.
-  if (lanePrefixes.includes(pathname)) return false;
-  let candidate = pathname;
-  if (candidate.endsWith('.md')) candidate = candidate.slice(0, -3);
-  return !validPaths.has(candidate) && !validPaths.has(pathname);
-}
-
-function scanBody(raw, siteHost, lanePrefixes, validPaths) {
+function scanBody(raw, siteHost, lanePrefixes, validPaths, redirects = []) {
   const body = raw.startsWith('---')
     ? raw.slice(Math.max(0, raw.indexOf('\n---', 3)) + 4)
     : raw;
   const dead = [];
   const check = (url, anchor, kind) => {
     const pathname = sameSitePathname(url, siteHost);
-    if (deadContentPath(pathname, lanePrefixes, validPaths)) {
+    if (deadContentPath(pathname, lanePrefixes, validPaths, redirects, siteHost)) {
       dead.push({ url: url.trim(), pathname, anchor, kind });
     }
   };
@@ -172,38 +309,56 @@ function scanBody(raw, siteHost, lanePrefixes, validPaths) {
 }
 
 /**
- * Heal dead links. A link orphaned by the date→dateless route migration (its slug
- * still carries a `YYYY-MM-DD-` prefix) is REPAIRED to the live dateless URL when that
- * URL resolves to a real route — preserving the internal link the author intended.
- * A genuinely dead link (no resolving target) is STRIPPED, collapsing the anchor to
- * its visible text. Function-replacers so `$` in text is never reinterpreted.
+ * Heal a same-site link. Order of resolution mirrors the server:
+ *   - resolves to a real content file        -> keep (valid)
+ *   - renamed/moved (matches a redirect)      -> REWRITE to the live destination
+ *                                                (follow the 301 chain to terminal);
+ *                                                cross-domain moves become the full URL
+ *   - date-orphan whose dateless route exists -> REPAIR to the dateless URL
+ *   - genuinely dead (none of the above)      -> STRIP, collapse to anchor text
+ * Returns { action: 'keep' | 'rewrite' | 'strip', to? }.
  */
-function healBody(raw, siteHost, lanePrefixes, validPaths) {
-  const isDead = (url) =>
-    deadContentPath(sameSitePathname(url, siteHost), lanePrefixes, validPaths);
-  // Date-strip repair candidate: drop a `/YYYY-MM-DD-` path token, keep query/hash.
-  const repairUrl = (url) => {
-    const candidate = url.replace(/\/\d{4}-\d{2}-\d{2}-/, '/');
-    if (candidate === url) return null;
-    return isDead(candidate) ? null : candidate;
-  };
+function classifyLink(url, siteHost, lanePrefixes, validPaths, redirects) {
+  const pathname = sameSitePathname(url, siteHost);
+  if (!inScope(pathname, lanePrefixes)) return { action: 'keep' };
+  const r = resolveTarget(pathname, validPaths, redirects, siteHost);
+  if (r.status === 'content') return { action: 'keep' };
+  const tail = (url.match(/[?#].*$/) || [''])[0];
+  // Renamed/moved content — follow the 301 chain and auto-update the link.
+  if (r.status === 'redirect-external') return { action: 'rewrite', to: r.target };
+  if (r.status === 'redirect-internal') return { action: 'rewrite', to: r.target + tail };
+  // Dead. Last chance: a `/YYYY-MM-DD-` date-orphan whose dateless route resolves.
+  const candidate = url.replace(/\/\d{4}-\d{2}-\d{2}-/, '/');
+  if (candidate !== url && resolvesContent(sameSitePathname(candidate, siteHost), validPaths)) {
+    return { action: 'rewrite', to: candidate };
+  }
+  return { action: 'strip' };
+}
+
+function healBody(raw, siteHost, lanePrefixes, validPaths, redirects = []) {
   const repaired = [];
   const stripped = [];
-  const resolve = (url, collapse) => {
-    const fixed = repairUrl(url);
-    if (fixed) { repaired.push({ from: url.trim(), to: fixed.trim() }); return collapse(fixed); }
-    stripped.push(url.trim());
-    return null; // signal: collapse to text
+  const apply = (url, collapse) => {
+    const c = classifyLink(url, siteHost, lanePrefixes, validPaths, redirects);
+    if (c.action === 'rewrite') {
+      repaired.push({ from: url.trim(), to: c.to.trim() });
+      return collapse(c.to);
+    }
+    if (c.action === 'strip') {
+      stripped.push(url.trim());
+      return null; // signal: collapse to text
+    }
+    return undefined; // keep
   };
   let out = raw.replace(MARKDOWN_LINK, (match, text, url) => {
-    if (!isDead(url)) return match;
-    const fixedMatch = resolve(url, (fixed) => match.replace(url, () => fixed));
-    return fixedMatch === null ? text : fixedMatch;
+    const res = apply(url, (fixed) => match.replace(url, () => fixed));
+    if (res === undefined) return match;
+    return res === null ? text : res;
   });
   out = out.replace(HTML_ANCHOR, (match, _q, url, inner) => {
-    if (!isDead(url)) return match;
-    const fixedMatch = resolve(url, (fixed) => match.replace(url, () => fixed));
-    return fixedMatch === null ? inner : fixedMatch;
+    const res = apply(url, (fixed) => match.replace(url, () => fixed));
+    if (res === undefined) return match;
+    return res === null ? inner : res;
   });
   return { out, repaired, stripped };
 }
@@ -215,7 +370,7 @@ function main() {
   const config = readConfig(root);
   const siteHost = config.siteHost;
   if (!siteHost) throw new Error('config.siteHost is required');
-  const { lanePrefixes, validPaths, files } = buildModel(root, config);
+  const { lanePrefixes, validPaths, files, redirects } = buildModel(root, config);
 
   const report = [];
   let repairedCount = 0;
@@ -226,7 +381,7 @@ function main() {
       const fmEnd = raw.startsWith('---') ? raw.indexOf('\n---', 3) : -1;
       const head = fmEnd === -1 ? '' : raw.slice(0, fmEnd + 4);
       const body = fmEnd === -1 ? raw : raw.slice(fmEnd + 4);
-      const { out, repaired, stripped } = healBody(body, siteHost, lanePrefixes, validPaths);
+      const { out, repaired, stripped } = healBody(body, siteHost, lanePrefixes, validPaths, redirects);
       if (repaired.length || stripped.length) {
         fs.writeFileSync(file, head + out);
         repairedCount += repaired.length;
@@ -234,7 +389,7 @@ function main() {
         report.push({ file: path.relative(root, file), repaired, stripped });
       }
     } else {
-      const dead = scanBody(raw, siteHost, lanePrefixes, validPaths);
+      const dead = scanBody(raw, siteHost, lanePrefixes, validPaths, redirects);
       if (dead.length) report.push({ file: path.relative(root, file), dead });
     }
   }
@@ -247,7 +402,7 @@ function main() {
     if (!json) {
       console.log(
         `internal-links: healed ${report.length} file(s) — ` +
-        `repaired ${repairedCount} link(s) to live route, stripped ${strippedCount} dead link(s).`
+        `rewrote ${repairedCount} link(s) to live route, stripped ${strippedCount} dead link(s).`
       );
     }
     return;
@@ -270,6 +425,11 @@ function main() {
 }
 
 // Export the pure pieces for the regression lock; run only as a CLI entrypoint.
-export { routeForFile, sameSitePathname, deadContentPath, scanBody, healBody, buildModel, frontmatterSlug };
+export {
+  routeForFile, sameSitePathname, deadContentPath, scanBody, healBody, buildModel,
+  frontmatterSlug, sourceToMatcher, parseNextRedirects, parseVercelRedirects,
+  redirectMatch, resolveRedirect, classifyLink, loadRedirects,
+  inScope, resolvesContent, resolveTarget,
+};
 
 if (import.meta.url === `file://${process.argv[1]}`) main();
