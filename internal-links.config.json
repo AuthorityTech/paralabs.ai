@@ -1,0 +1,6 @@
+{
+  "siteHost": "paralabs.ai",
+  "lanes": [
+    { "dir": "content/posts", "prefix": "/blog", "stripDate": true, "slugFromFrontmatter": false }
+  ]
+}
