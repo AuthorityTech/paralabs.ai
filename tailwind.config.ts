@@ -5,7 +5,7 @@ const config: Config = {
   theme: {
     extend: {
       maxWidth: {
-        content: "42rem",
+        content: "var(--frame, 42rem)",
       },
       colors: {
         link: "var(--interactive)",

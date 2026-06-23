@@ -5,6 +5,7 @@
 /* Nothing design tokens — system, or forced via html.light / html.dark (see ThemeNavButton) */
 :root {
   color-scheme: light;
+  --frame: 42rem;
   --page-bg: #fafaf9;
   --surface: #ffffff;
   --surface-raised: #f5f5f4;
@@ -58,6 +59,15 @@ html.dark {
   margin: 0;
   padding: 0;
 }
+
+/* Article-with-TOC pages widen the shared frame so the nav, content, and
+   section rail center as one balanced block. Gated at xl where the rail shows. */
+@media (min-width: 1280px) {
+  :root:has([data-article-toc]) {
+    --frame: 58rem;
+  }
+}
+
 
 html {
   scroll-behavior: smooth;

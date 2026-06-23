@@ -80,11 +80,12 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <div
-      className="relative mx-auto max-w-content px-6 py-16 md:py-20"
+      data-article-toc={showSectionNav ? "" : undefined}
+      className={`relative mx-auto max-w-content px-6 py-16 md:py-20${showSectionNav ? " xl:grid xl:grid-cols-[minmax(0,1fr)_14rem] xl:gap-8" : ""}`}
     >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: blogLd }} />
 
-      <main className="w-full">
+      <main className="min-w-0">
         <nav className="mb-12">
           <Link
             href="/blog"
@@ -136,7 +137,7 @@ export default async function PostPage({ params }: Props) {
       </main>
 
       {showSectionNav && (
-        <aside className="hidden xl:block xl:absolute xl:inset-y-20 xl:left-full xl:ml-8 xl:w-56">
+        <aside className="hidden xl:block">
           <nav aria-label="Article sections" className="sticky top-24 border-l border-nothing-border pl-5">
             <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.1em] text-nothing-disabled">On this page</p>
             <ol className="space-y-3">
