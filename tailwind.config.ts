@@ -4,6 +4,9 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      maxWidth: {
+        content: "42rem",
+      },
       colors: {
         link: "var(--interactive)",
         nothing: {

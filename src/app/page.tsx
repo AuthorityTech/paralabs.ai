@@ -38,7 +38,7 @@ export default function HomePage() {
   const posts = getAllPosts().slice(0, 10);
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16 md:py-20">
+    <div className="mx-auto max-w-content px-6 py-16 md:py-20">
       <section className="mb-20">
         <h1 className="font-display text-[2.5rem] font-medium leading-[1.1] tracking-[-0.02em] text-nothing-display">
           {HOME_COPY.name}

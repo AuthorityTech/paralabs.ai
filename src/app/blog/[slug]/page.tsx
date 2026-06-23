@@ -83,12 +83,12 @@ export default async function PostPage({ params }: Props) {
       className={
         showSectionNav
           ? "mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 py-16 md:py-20 xl:grid-cols-[minmax(0,42rem)_14rem]"
-          : "mx-auto max-w-2xl px-6 py-16 md:py-20"
+          : "mx-auto max-w-content px-6 py-16 md:py-20"
       }
     >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: blogLd }} />
 
-      <main className={showSectionNav ? "mx-auto w-full max-w-2xl xl:mx-0" : "w-full"}>
+      <main className={showSectionNav ? "mx-auto w-full max-w-content xl:mx-0" : "w-full"}>
         <nav className="mb-12">
           <Link
             href="/blog"

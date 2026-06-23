@@ -113,7 +113,7 @@ export default function BlogPage() {
   const blogSchema = buildBlogSchema(all);
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16 md:py-20">
+    <div className="mx-auto max-w-content px-6 py-16 md:py-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }} />
 
       <header className="mb-16">

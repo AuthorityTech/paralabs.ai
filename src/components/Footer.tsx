@@ -5,7 +5,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer className="mt-24 border-t border-nothing-border">
-      <div className="mx-auto max-w-2xl px-6 pt-10">
+      <div className="mx-auto max-w-content px-6 pt-10">
         <div className="grid gap-5 border-b border-nothing-border pb-8 sm:grid-cols-[1fr_auto] sm:items-end">
           <div className="max-w-xl">
             <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.14em] text-nothing-disabled">
@@ -38,7 +38,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      <div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-8 font-mono text-[11px] uppercase tracking-[0.06em] text-nothing-secondary sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex max-w-content flex-col gap-4 px-6 py-8 font-mono text-[11px] uppercase tracking-[0.06em] text-nothing-secondary sm:flex-row sm:items-center sm:justify-between">
         <span className="normal-case tracking-normal text-nothing-disabled">&copy; {year} Para Labs</span>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           <a
