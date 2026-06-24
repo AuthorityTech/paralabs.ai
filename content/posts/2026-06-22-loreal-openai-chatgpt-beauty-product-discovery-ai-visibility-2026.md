@@ -1,5 +1,5 @@
 ---
-title: "L'Oreal's ChatGPT Beauty Push Turns Product Discovery Into an AI Visibility Test"
+title: "L'Oreal OpenAI ChatGPT Beauty Product Discovery: AI Visibility Test"
 date: "2026-06-22"
 slug: "loreal-openai-chatgpt-beauty-product-discovery-ai-visibility-2026"
 description: "L'Oreal's OpenAI partnership shows how AI product discovery is becoming a source-architecture problem."
