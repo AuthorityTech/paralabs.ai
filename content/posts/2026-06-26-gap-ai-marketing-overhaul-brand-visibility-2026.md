@@ -1,10 +1,10 @@
 ---
-title: "Gap's AI Marketing Overhaul: A Brand Visibility Case Study"
+title: "Gap AI Marketing Overhaul: Google Cloud, Zeta, Publicis Sapient, and Brand Visibility 2026"
 date: "2026-06-26"
 slug: "gap-ai-marketing-overhaul-brand-visibility-2026"
 description: "Gap's AI marketing stack shows how brand visibility now depends on source-ready owned channels."
 tags: ["ai-visibility", "retail"]
-primaryQuery: "Gap AI marketing overhaul brand visibility"
+primaryQuery: "Gap AI marketing overhaul Google Cloud Zeta Publicis Sapient brand visibility 2026"
 researchBriefPath: "editorial/data/research-briefs/2026/06/26/paralabs/gap-ai-marketing-overhaul-brand-visibility-2026.json"
 researchQualityScore: 6.5
 ---
