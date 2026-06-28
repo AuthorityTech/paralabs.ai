@@ -1,5 +1,5 @@
 ---
-title: "Albertsons Turns AI Grocery Search Into Sponsored Product Discovery"
+title: "Albertsons Criteo AI Search Sponsored Product Discovery"
 date: "2026-06-27"
 slug: "albertsons-ai-grocery-search-sponsored-product-discovery-2026"
 description: "Albertsons' Criteo integration shows how retail media is moving into AI-powered product discovery."
