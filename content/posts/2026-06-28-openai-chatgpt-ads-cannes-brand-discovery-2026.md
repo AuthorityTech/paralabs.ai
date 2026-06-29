@@ -1,5 +1,5 @@
 ---
-title: "OpenAI's ChatGPT Ad Pitch Turns AI Search Into a Brand Discovery Channel"
+title: "OpenAI ChatGPT Ads at Cannes: Brand Discovery in 2026"
 date: "2026-06-28"
 slug: "openai-chatgpt-ads-cannes-brand-discovery-2026"
 description: "OpenAI's Cannes ad pitch shows why CMOs need source clarity before buying ChatGPT attention."
