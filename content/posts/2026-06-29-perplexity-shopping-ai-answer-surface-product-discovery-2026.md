@@ -1,5 +1,5 @@
 ---
-title: "Perplexity Shopping Shows Why Product Discovery Is Becoming an AI Answer Surface"
+title: "Perplexity Shopping Makes Product Discovery an AI Answer Surface in 2026"
 date: "2026-06-29"
 slug: "perplexity-shopping-ai-answer-surface-product-discovery-2026"
 description: "Perplexity Shopping makes product discovery an answer-engine problem beyond feeds and SEO."
