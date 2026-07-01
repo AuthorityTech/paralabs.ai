@@ -1,5 +1,5 @@
 ---
-title: "Muck Rack's AI Citation Data Shows Earned Media Is Still the Visibility Layer"
+title: "Muck Rack Generative Pulse 2026: Earned Media Drives AI Citations"
 date: "2026-06-30"
 slug: "muck-rack-earned-media-ai-citations-visibility-layer-2026"
 description: "Muck Rack's AI citation data shows why earned media remains the source layer for AI brand visibility."
