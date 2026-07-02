@@ -1,5 +1,5 @@
 ---
-title: "Ask Pinterest Shows AI Brand Visibility Is Becoming Visual Search Infrastructure"
+title: "Ask Pinterest AI Shopping App: Visual Discovery Becomes Brand Visibility Infrastructure"
 date: "2026-07-01"
 slug: "ask-pinterest-ai-shopping-visual-search-brand-visibility-2026"
 description: "Ask Pinterest shows why visual AI shopping makes brand visibility a source architecture problem."
