@@ -1,5 +1,5 @@
 ---
-title: "MarTech's AI Visibility Signal: The Source Now Matters More Than the Ranking"
+title: "Earned Media Source Selection for AI Visibility"
 date: "2026-07-03"
 slug: "martech-earned-media-source-selection-ai-visibility-2026"
 description: "MarTech's July signal shows why AI visibility now depends on source selection, not rankings alone."
