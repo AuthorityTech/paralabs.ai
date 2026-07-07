@@ -1,0 +1,72 @@
+name: Site Integrity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "internal-links.config.json"
+      - "src/lib/geo-schema.ts"
+      - "src/app/layout.tsx"
+      - "src/app/blog/**/page.tsx"
+      - "src/app/page.tsx"
+      - "scripts/validate-live-schema.mjs"
+      - "scripts/schema-vocab-cache.json"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - ".github/workflows/site-integrity.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "internal-links.config.json"
+      - "src/lib/geo-schema.ts"
+      - "src/app/layout.tsx"
+      - "src/app/blog/**/page.tsx"
+      - "src/app/page.tsx"
+      - "scripts/validate-live-schema.mjs"
+      - "scripts/schema-vocab-cache.json"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - ".github/workflows/site-integrity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  site-integrity:
+    uses: AuthorityTech/.github/.github/workflows/site-integrity.yml@main
+    with:
+      node-version: "20"
+      install-command: npm ci
+      internal-links-config: internal-links.config.json
+      schema-command: |
+        node -e "
+          const pkg = require('./package.json');
+          const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+          if (!deps['@editorialkit/schema']) {
+            console.error('FAIL: @editorialkit/schema is missing from package.json dependencies');
+            process.exit(1);
+          }
+          console.log('PASS: @editorialkit/schema found in dependencies');
+        "
+
+        if ! grep -q '@editorialkit/schema' src/lib/geo-schema.ts; then
+          echo "FAIL: src/lib/geo-schema.ts does not import from @editorialkit/schema"
+          exit 1
+        fi
+        echo "PASS: src/lib/geo-schema.ts imports from @editorialkit/schema"
+
+        npm run build
+
+        npm start &
+        SERVER_PID=$!
+        trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+        echo "Waiting for server on :3000..."
+        for i in $(seq 1 30); do
+          curl -sf -m 2 http://localhost:3000/ -o /dev/null && { echo "ready after ${i}s"; break; }
+          sleep 1
+        done
+        node scripts/validate-live-schema.mjs --site paralabs.ai --base http://localhost:3000
