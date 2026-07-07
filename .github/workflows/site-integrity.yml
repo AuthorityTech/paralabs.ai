@@ -42,6 +42,21 @@ jobs:
       node-version: "20"
       install-command: npm ci
       internal-links-config: internal-links.config.json
+      internal-links-paths: |
+        content/**
+        internal-links.config.json
+        .github/workflows/site-integrity.yml
+      schema-paths: |
+        src/lib/geo-schema.ts
+        src/app/layout.tsx
+        src/app/blog/**/page.tsx
+        src/app/page.tsx
+        scripts/validate-live-schema.mjs
+        scripts/schema-vocab-cache.json
+        package.json
+        package-lock.json
+        packages/**
+        .github/workflows/site-integrity.yml
       schema-command: |
         node -e "
           const pkg = require('./package.json');
