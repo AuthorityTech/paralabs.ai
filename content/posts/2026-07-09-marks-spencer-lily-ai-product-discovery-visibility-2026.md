@@ -1,5 +1,5 @@
 ---
-title: "Marks & Spencer's Lily AI Move Shows Product Data Is Becoming the New AI Visibility Layer"
+title: "Marks and Spencer Lily AI Product Discovery 2026"
 date: "2026-07-09"
 slug: "marks-spencer-lily-ai-product-discovery-visibility-2026"
 description: "M&S shows why AI visibility now starts with product data, not just ranking tactics."
