@@ -20,7 +20,7 @@
     "indexnow:all": "node scripts/ping-indexnow.mjs --all"
   },
   "dependencies": {
-    "@editorialkit/schema": "file:packages/editorialkit-schema-1.2.0.tgz",
+    "@editorialkit/schema": "file:packages/editorialkit-schema-1.2.2.tgz",
     "github-slugger": "^2.0.0",
     "gray-matter": "^4.0.3",
     "next": "^15.5.18",
