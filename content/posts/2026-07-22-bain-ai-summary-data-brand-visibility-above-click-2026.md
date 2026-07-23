@@ -1,5 +1,5 @@
 ---
-title: "Bain's AI summary data shows brand visibility is moving above the click"
+title: "Bain Dynata Survey AI Summaries Brand Visibility"
 date: "2026-07-22"
 slug: "bain-ai-summary-data-brand-visibility-above-click-2026"
 description: "Bain's AI summary data shows brand visibility now has to be earned before the click."
